@@ -6,7 +6,7 @@ import { prisma } from "@/lib/db/prisma";
 import { verifyPassword } from "@/lib/auth/passwords";
 import { createSession, destroySession } from "@/lib/auth/session";
 
-type LoginState = {
+export type LoginState = {
   message?: string;
   errors?: {
     email?: string[];
