@@ -1,0 +1,80 @@
+import { PrismaClient } from "../app/generated/prisma/client";
+import { hashPassword } from "../lib/auth/passwords";
+import { createOpaqueToken, hashToken } from "../lib/auth/tokens";
+
+const prisma = new PrismaClient();
+
+async function main() {
+  const adminEmail = process.env.SEED_ADMIN_EMAIL ?? "admin@lia.local";
+  const adminPassword = process.env.SEED_ADMIN_PASSWORD ?? "change-this-password";
+  const apiKey = createOpaqueToken();
+
+  await prisma.user.upsert({
+    where: { email: adminEmail },
+    update: {
+      name: process.env.SEED_ADMIN_NAME ?? "Administrador",
+      role: "admin",
+      isActive: true,
+    },
+    create: {
+      name: process.env.SEED_ADMIN_NAME ?? "Administrador",
+      email: adminEmail,
+      passwordHash: await hashPassword(adminPassword),
+      role: "admin",
+      isActive: true,
+    },
+  });
+
+  await prisma.clinicProfile.upsert({
+    where: { id: "default" },
+    update: {
+      name: process.env.CLINIC_NAME ?? "Dr. Darcy Mavignier",
+      subtitle: process.env.CLINIC_SUBTITLE ?? "odontologia integrada",
+      specialty: process.env.CLINIC_SPECIALTY ?? "Cirurgião-Dentista",
+      cro: process.env.CLINIC_CRO ?? "CRO-CE 4157",
+      phone: process.env.CLINIC_PHONE ?? "(00) 00000-0000",
+      address: process.env.CLINIC_ADDRESS ?? "Rua das Flores, 123 - Centro",
+      cityLine: process.env.CLINIC_CITY_LINE ?? "Cidade - UF - CEP 00000-000",
+      website: process.env.CLINIC_WEBSITE ?? "www.darcymavignier.com.br",
+    },
+    create: {
+      id: "default",
+      name: process.env.CLINIC_NAME ?? "Dr. Darcy Mavignier",
+      subtitle: process.env.CLINIC_SUBTITLE ?? "odontologia integrada",
+      specialty: process.env.CLINIC_SPECIALTY ?? "Cirurgião-Dentista",
+      cro: process.env.CLINIC_CRO ?? "CRO-CE 4157",
+      phone: process.env.CLINIC_PHONE ?? "(00) 00000-0000",
+      address: process.env.CLINIC_ADDRESS ?? "Rua das Flores, 123 - Centro",
+      cityLine: process.env.CLINIC_CITY_LINE ?? "Cidade - UF - CEP 00000-000",
+      website: process.env.CLINIC_WEBSITE ?? "www.darcymavignier.com.br",
+    },
+  });
+
+  const apiKeyName = process.env.SEED_API_KEY_NAME ?? "lia-agent-local";
+  const existingApiKey = await prisma.apiKey.findFirst({
+    where: { name: apiKeyName },
+  });
+
+  if (!existingApiKey) {
+    await prisma.apiKey.create({
+      data: {
+        name: apiKeyName,
+        keyHash: hashToken(apiKey),
+        isActive: true,
+      },
+    });
+    console.log(`Seed API key: ${apiKey}`);
+  }
+
+  console.log(`Seed admin email: ${adminEmail}`);
+}
+
+main()
+  .finally(async () => {
+    await prisma.$disconnect();
+  })
+  .catch(async (error) => {
+    console.error(error);
+    await prisma.$disconnect();
+    process.exit(1);
+  });

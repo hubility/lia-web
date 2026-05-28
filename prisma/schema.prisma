@@ -1,0 +1,173 @@
+generator client {
+  provider = "prisma-client"
+  output   = "../app/generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum UserRole {
+  admin
+  dentist
+  assistant
+}
+
+enum AppointmentStatus {
+  scheduled
+  confirmed
+  cancelled
+  completed
+}
+
+model User {
+  id           String    @id @default(cuid())
+  name         String
+  email        String    @unique
+  passwordHash String
+  role         UserRole
+  isActive     Boolean   @default(true)
+  sessions     Session[]
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
+}
+
+model Session {
+  id        String   @id @default(cuid())
+  tokenHash String   @unique
+  userId    String
+  expiresAt DateTime
+  createdAt DateTime @default(now())
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model ApiKey {
+  id         String    @id @default(cuid())
+  name       String
+  keyHash    String    @unique
+  isActive   Boolean   @default(true)
+  lastUsedAt DateTime?
+  createdAt  DateTime  @default(now())
+  updatedAt  DateTime  @updatedAt
+}
+
+model ClinicProfile {
+  id        String   @id @default("default")
+  name      String
+  subtitle  String
+  specialty String
+  cro       String
+  phone     String
+  address   String
+  cityLine  String
+  website   String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model Patient {
+  id            String               @id @default(cuid())
+  name          String
+  phone         String
+  email         String?
+  cpf           String?
+  birthDate     DateTime?
+  recordNumber  String?
+  notes         String?
+  appointments  Appointment[]
+  quotes        Quote[]
+  prescriptions Prescription[]
+  certificates  MedicalCertificate[]
+  createdAt     DateTime             @default(now())
+  updatedAt     DateTime             @updatedAt
+}
+
+model CatalogItem {
+  id              String        @id @default(cuid())
+  name            String
+  description     String?
+  priceCents      Int
+  durationMinutes Int
+  isActive        Boolean       @default(true)
+  appointments    Appointment[]
+  quoteLines      QuoteLine[]
+  createdAt       DateTime      @default(now())
+  updatedAt       DateTime      @updatedAt
+}
+
+model Appointment {
+  id              String            @id @default(cuid())
+  patientId       String
+  catalogItemId   String?
+  title           String
+  startsAt        DateTime
+  durationMinutes Int
+  status          AppointmentStatus @default(scheduled)
+  notes           String?
+  patient         Patient           @relation(fields: [patientId], references: [id], onDelete: Cascade)
+  catalogItem     CatalogItem?      @relation(fields: [catalogItemId], references: [id], onDelete: SetNull)
+  createdAt       DateTime          @default(now())
+  updatedAt       DateTime          @updatedAt
+}
+
+model Quote {
+  id            String      @id @default(cuid())
+  patientId     String
+  number        String      @unique
+  issueDate     DateTime
+  paymentMethod String?
+  validityDays  Int?
+  discountCents Int         @default(0)
+  notes         String?
+  patient       Patient     @relation(fields: [patientId], references: [id], onDelete: Cascade)
+  lines         QuoteLine[]
+  createdAt     DateTime    @default(now())
+  updatedAt     DateTime    @updatedAt
+}
+
+model QuoteLine {
+  id              String       @id @default(cuid())
+  quoteId         String
+  catalogItemId   String?
+  description     String
+  quantity        Int
+  unitPriceCents  Int
+  totalPriceCents Int
+  quote           Quote        @relation(fields: [quoteId], references: [id], onDelete: Cascade)
+  catalogItem     CatalogItem? @relation(fields: [catalogItemId], references: [id], onDelete: SetNull)
+}
+
+model Prescription {
+  id        String             @id @default(cuid())
+  patientId String
+  issueDate DateTime
+  notes     String?
+  patient   Patient            @relation(fields: [patientId], references: [id], onDelete: Cascade)
+  items     PrescriptionItem[]
+  createdAt DateTime           @default(now())
+  updatedAt DateTime           @updatedAt
+}
+
+model PrescriptionItem {
+  id             String       @id @default(cuid())
+  prescriptionId String
+  medicine       String
+  instructions   String
+  position       Int
+  prescription   Prescription @relation(fields: [prescriptionId], references: [id], onDelete: Cascade)
+}
+
+model MedicalCertificate {
+  id               String   @id @default(cuid())
+  patientId        String
+  issueDate        DateTime
+  absenceStartDate DateTime
+  absenceEndDate   DateTime
+  cid              String
+  city             String
+  notes            String?
+  patient          Patient  @relation(fields: [patientId], references: [id], onDelete: Cascade)
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+}
