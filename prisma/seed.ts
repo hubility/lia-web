@@ -20,6 +20,57 @@ if (existsSync(envPath)) {
 
 const prisma = new PrismaClient();
 
+const catalogItems = [
+  {
+    name: "Consulta odontológica",
+    description: "Avaliação clínica inicial.",
+    priceCents: 15000,
+    durationMinutes: 45,
+  },
+  {
+    name: "Limpeza dental",
+    description: "Profilaxia e orientação de higiene.",
+    priceCents: 22000,
+    durationMinutes: 60,
+  },
+  {
+    name: "Clareamento dental",
+    description: "Sessão de clareamento em consultório.",
+    priceCents: 90000,
+    durationMinutes: 90,
+  },
+  {
+    name: "Restauração",
+    description: "Restauração em resina composta.",
+    priceCents: 28000,
+    durationMinutes: 60,
+  },
+  {
+    name: "Extração simples",
+    description: "Extração dentária sem complexidade cirúrgica.",
+    priceCents: 35000,
+    durationMinutes: 60,
+  },
+  {
+    name: "Canal radicular",
+    description: "Tratamento endodôntico por sessão.",
+    priceCents: 75000,
+    durationMinutes: 90,
+  },
+  {
+    name: "Implante dentário",
+    description: "Instalação de implante, sem prótese.",
+    priceCents: 250000,
+    durationMinutes: 90,
+  },
+  {
+    name: "Coroa protética",
+    description: "Coroa unitária sobre dente ou implante.",
+    priceCents: 180000,
+    durationMinutes: 60,
+  },
+];
+
 async function main() {
   const adminEmail = process.env.SEED_ADMIN_EMAIL ?? "admin@lia.local";
   const adminPassword = process.env.SEED_ADMIN_PASSWORD ?? "change-this-password";
@@ -65,6 +116,24 @@ async function main() {
       website: process.env.CLINIC_WEBSITE ?? "www.darcymavignier.com.br",
     },
   });
+
+  for (const item of catalogItems) {
+    const existing = await prisma.catalogItem.findFirst({
+      where: { name: item.name },
+    });
+
+    if (existing) {
+      await prisma.catalogItem.update({
+        where: { id: existing.id },
+        data: { ...item, isActive: true },
+      });
+      continue;
+    }
+
+    await prisma.catalogItem.create({
+      data: item,
+    });
+  }
 
   const apiKeyName = process.env.SEED_API_KEY_NAME ?? "lia-agent-local";
   const existingApiKey = await prisma.apiKey.findFirst({
