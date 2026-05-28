@@ -1,6 +1,22 @@
 import { PrismaClient } from "../app/generated/prisma/client";
 import { hashPassword } from "../lib/auth/passwords";
 import { createOpaqueToken, hashToken } from "../lib/auth/tokens";
+import { existsSync, readFileSync } from "node:fs";
+import { resolve } from "node:path";
+
+const envPath = resolve(process.cwd(), ".env");
+
+if (existsSync(envPath)) {
+  for (const line of readFileSync(envPath, "utf8").split(/\r?\n/)) {
+    const match = line.match(/^\s*([A-Za-z_][A-Za-z0-9_]*)=(.*)\s*$/);
+
+    if (!match || process.env[match[1]] !== undefined) {
+      continue;
+    }
+
+    process.env[match[1]] = match[2].replace(/^"(.*)"$/, "$1");
+  }
+}
 
 const prisma = new PrismaClient();
 
