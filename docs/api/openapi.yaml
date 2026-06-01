@@ -1,0 +1,667 @@
+openapi: 3.1.0
+info:
+  title: API del agente — Consultorio Dr. Darcy Mavignier
+  version: "1.0.0"
+  description: >
+    API REST que consume el agente de IA (por teléfono). Todos los endpoints
+    requieren una API key en el header `x-api-key`. El paciente se identifica
+    SIEMPRE por su número de teléfono; nunca se expone ni se acepta `patientId`.
+    Las fechas son ISO 8601 con offset; el horario del consultorio es
+    America/Fortaleza (08:00–18:00). Las respuestas exitosas se envuelven en
+    `{ "data": ... }` y los errores en `{ "error": "mensaje" }`.
+
+servers:
+  - url: http://localhost:3000
+    description: Desarrollo (la documentación solo se publica en `next dev`)
+
+security:
+  - apiKey: []
+
+tags:
+  - name: Disponibilidad
+  - name: Citas
+  - name: Pacientes
+  - name: Catálogo
+  - name: Orçamentos
+  - name: Receitas
+  - name: Atestados
+
+paths:
+  /api/agent/v1/availability:
+    get:
+      tags: [Disponibilidad]
+      summary: Huecos libres para un servicio en una ventana
+      description: >
+        Calcula los horarios de inicio disponibles para un servicio dentro de la
+        ventana `from`–`to`. El paso entre candidatos es la duración del servicio.
+        La traducción de lenguaje natural ("mañana por la mañana") a la ventana es
+        responsabilidad del agente, no de la API.
+      parameters:
+        - name: from
+          in: query
+          required: true
+          schema: { type: string, format: date-time }
+          example: "2026-06-01T08:00:00-03:00"
+        - name: to
+          in: query
+          required: true
+          schema: { type: string, format: date-time }
+          example: "2026-06-01T18:00:00-03:00"
+        - name: catalogItemId
+          in: query
+          required: true
+          schema: { type: string }
+          description: ID del servicio del catálogo (define la duración).
+      responses:
+        "200":
+          description: Lista de horarios de inicio disponibles (ISO 8601 UTC).
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: object
+                    properties:
+                      durationMinutes: { type: integer, example: 60 }
+                      slots:
+                        type: array
+                        items: { type: string, format: date-time }
+                        example:
+                          - "2026-06-01T11:00:00.000Z"
+                          - "2026-06-01T12:00:00.000Z"
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "404": { $ref: "#/components/responses/NotFound" }
+        "422": { $ref: "#/components/responses/Unprocessable" }
+
+  /api/agent/v1/appointments:
+    get:
+      tags: [Citas]
+      summary: Próximas citas de un paciente (por teléfono)
+      description: >
+        Devuelve solo las citas futuras y no canceladas, en orden ascendente.
+        Si el teléfono no corresponde a ningún paciente, devuelve una lista vacía.
+      parameters:
+        - name: phone
+          in: query
+          required: true
+          schema: { type: string }
+          example: "+5585999990000"
+      responses:
+        "200":
+          description: Próximas citas.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: array
+                    items: { $ref: "#/components/schemas/Appointment" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "422": { $ref: "#/components/responses/Unprocessable" }
+    post:
+      tags: [Citas]
+      summary: Agendar una cita
+      description: >
+        El paciente debe existir previamente (identificado por teléfono). La
+        duración se toma de `durationMinutes` o se deriva del `catalogItemId`.
+        Valida el horario del consultorio (08:00–18:00 Fortaleza) y la ausencia
+        de colisiones con otras citas o bloqueos.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [phone, startsAt]
+              properties:
+                phone: { type: string, example: "+5585999990000" }
+                startsAt: { type: string, format: date-time, example: "2026-06-01T11:00:00-03:00" }
+                catalogItemId:
+                  type: string
+                  description: Si se envía, define duración y título por defecto.
+                durationMinutes:
+                  type: integer
+                  minimum: 1
+                  description: Obligatorio si no se envía `catalogItemId`.
+                title: { type: string }
+                notes: { type: string }
+      responses:
+        "201":
+          description: Cita creada.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data: { $ref: "#/components/schemas/Appointment" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "404":
+          description: Paciente o servicio no encontrado.
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Error" }
+        "409": { $ref: "#/components/responses/Conflict" }
+        "422": { $ref: "#/components/responses/Unprocessable" }
+
+  /api/agent/v1/appointments/{id}:
+    patch:
+      tags: [Citas]
+      summary: Reprogramar una cita
+      description: >
+        El `id` es el `appointmentId` que el agente obtuvo al listar o consultar
+        contexto. Revalida horario y colisión con la nueva fecha/duración.
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: string }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                startsAt: { type: string, format: date-time }
+                durationMinutes: { type: integer, minimum: 1 }
+      responses:
+        "200":
+          description: Cita reprogramada.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data: { $ref: "#/components/schemas/Appointment" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "404": { $ref: "#/components/responses/NotFound" }
+        "409": { $ref: "#/components/responses/Conflict" }
+        "422": { $ref: "#/components/responses/Unprocessable" }
+    delete:
+      tags: [Citas]
+      summary: Cancelar una cita
+      description: Cancelación lógica (status `cancelled`), no borrado físico.
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: string }
+      responses:
+        "200":
+          description: Cita cancelada.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data: { $ref: "#/components/schemas/Appointment" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "404": { $ref: "#/components/responses/NotFound" }
+
+  /api/agent/v1/patients:
+    get:
+      tags: [Pacientes]
+      summary: Buscar pacientes
+      description: >
+        Con `phone` hace un match EXACTO (uso del agente). Con `q` hace una
+        búsqueda difusa por nombre, teléfono, email o CPF (compatibilidad con la
+        web). Sin parámetros, devuelve todos.
+      parameters:
+        - name: phone
+          in: query
+          required: false
+          schema: { type: string }
+          description: Teléfono exacto.
+        - name: q
+          in: query
+          required: false
+          schema: { type: string }
+          description: Búsqueda difusa.
+      responses:
+        "200":
+          description: Pacientes encontrados.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: array
+                    items: { $ref: "#/components/schemas/Patient" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+    post:
+      tags: [Pacientes]
+      summary: Crear un paciente
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [name, phone]
+              properties:
+                name: { type: string }
+                phone: { type: string, example: "+5585999990000" }
+                email: { type: [string, "null"], format: email }
+                cpf: { type: [string, "null"] }
+                birthDate: { type: [string, "null"], format: date-time }
+                recordNumber: { type: [string, "null"] }
+                notes: { type: [string, "null"] }
+      responses:
+        "201":
+          description: Paciente creado.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data: { $ref: "#/components/schemas/Patient" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "422": { $ref: "#/components/responses/Unprocessable" }
+
+  /api/agent/v1/patients/context:
+    get:
+      tags: [Pacientes]
+      summary: Contexto del paciente (por teléfono)
+      description: >
+        Devuelve próximas citas, último orçamento, última receita y atestados
+        vigentes hoy (hora de Fortaleza). Si el teléfono no es paciente, responde
+        `{ isPatient: false }` con HTTP 200 (el agente necesita saberlo, no es error).
+      parameters:
+        - name: phone
+          in: query
+          required: true
+          schema: { type: string }
+          example: "+5585999990000"
+      responses:
+        "200":
+          description: Contexto del paciente.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data: { $ref: "#/components/schemas/PatientContext" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "422": { $ref: "#/components/responses/Unprocessable" }
+
+  /api/agent/v1/catalog:
+    get:
+      tags: [Catálogo]
+      summary: Servicios activos del catálogo
+      description: >
+        Devuelve solo los servicios activos, ordenados por nombre. Los precios
+        vienen en centavos (`priceCents`). El agente usa el `id` de cada servicio
+        como `catalogItemId` al consultar disponibilidad o agendar.
+      responses:
+        "200":
+          description: Servicios del catálogo.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: array
+                    items: { $ref: "#/components/schemas/CatalogItem" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+
+  /api/agent/v1/quotes:
+    get:
+      tags: [Orçamentos]
+      summary: Listar orçamentos
+      description: >
+        Devuelve todos los orçamentos con su paciente y sus líneas, en orden
+        descendente por fecha de emisión.
+      responses:
+        "200":
+          description: Orçamentos.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: array
+                    items: { $ref: "#/components/schemas/Quote" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+    post:
+      tags: [Orçamentos]
+      summary: Crear un orçamento
+      description: >
+        El paciente se identifica por `patientId` (no por teléfono en este
+        endpoint). El número (`ORC-xxxxx`) y el total de cada línea se calculan en
+        el servidor. Requiere al menos una línea.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [patientId, issueDate, discountCents, lines]
+              properties:
+                patientId: { type: string }
+                issueDate: { type: string, format: date-time }
+                paymentMethod: { type: [string, "null"] }
+                validityDays: { type: [integer, "null"] }
+                discountCents: { type: integer, example: 0 }
+                notes: { type: [string, "null"] }
+                lines:
+                  type: array
+                  minItems: 1
+                  items:
+                    type: object
+                    required: [description, quantity, unitPriceCents]
+                    properties:
+                      catalogItemId: { type: [string, "null"] }
+                      description: { type: string }
+                      quantity: { type: integer, example: 1 }
+                      unitPriceCents: { type: integer, example: 15000 }
+      responses:
+        "201":
+          description: Orçamento creado.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data: { $ref: "#/components/schemas/Quote" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "422": { $ref: "#/components/responses/Unprocessable" }
+
+  /api/agent/v1/prescriptions:
+    get:
+      tags: [Receitas]
+      summary: Listar receitas
+      description: >
+        Devuelve todas las receitas con su paciente, en orden descendente por
+        fecha de emisión.
+      responses:
+        "200":
+          description: Receitas.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: array
+                    items: { $ref: "#/components/schemas/Prescription" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+    post:
+      tags: [Receitas]
+      summary: Crear una receita
+      description: >
+        El paciente se identifica por `patientId`. Requiere al menos un item
+        (medicamento + instrucciones + posición de orden).
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [patientId, issueDate, items]
+              properties:
+                patientId: { type: string }
+                issueDate: { type: string, format: date-time }
+                notes: { type: [string, "null"] }
+                items:
+                  type: array
+                  minItems: 1
+                  items:
+                    type: object
+                    required: [medicine, instructions, position]
+                    properties:
+                      medicine: { type: string }
+                      instructions: { type: string }
+                      position: { type: integer, example: 0 }
+      responses:
+        "201":
+          description: Receita creada.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data: { $ref: "#/components/schemas/Prescription" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "422": { $ref: "#/components/responses/Unprocessable" }
+
+  /api/agent/v1/certificates:
+    get:
+      tags: [Atestados]
+      summary: Listar atestados
+      description: >
+        Devuelve todos los atestados con su paciente, en orden descendente por
+        fecha de emisión.
+      responses:
+        "200":
+          description: Atestados.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: array
+                    items: { $ref: "#/components/schemas/MedicalCertificate" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+    post:
+      tags: [Atestados]
+      summary: Crear un atestado
+      description: >
+        El paciente se identifica por `patientId`. `absenceEndDate` no puede ser
+        anterior a `absenceStartDate`.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [patientId, issueDate, absenceStartDate, absenceEndDate, cid, city]
+              properties:
+                patientId: { type: string }
+                issueDate: { type: string, format: date-time }
+                absenceStartDate: { type: string, format: date-time }
+                absenceEndDate: { type: string, format: date-time }
+                cid: { type: string, example: "K08.1" }
+                city: { type: string, example: "Fortaleza" }
+                notes: { type: [string, "null"] }
+      responses:
+        "201":
+          description: Atestado creado.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data: { $ref: "#/components/schemas/MedicalCertificate" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "422": { $ref: "#/components/responses/Unprocessable" }
+
+components:
+  securitySchemes:
+    apiKey:
+      type: apiKey
+      in: header
+      name: x-api-key
+
+  responses:
+    Unauthorized:
+      description: API key ausente o inválida.
+      content:
+        application/json:
+          schema: { $ref: "#/components/schemas/Error" }
+    NotFound:
+      description: Recurso no encontrado.
+      content:
+        application/json:
+          schema: { $ref: "#/components/schemas/Error" }
+    Conflict:
+      description: Colisión con otra cita o bloqueo en ese horario.
+      content:
+        application/json:
+          schema: { $ref: "#/components/schemas/Error" }
+    Unprocessable:
+      description: Parámetros o cuerpo inválidos.
+      content:
+        application/json:
+          schema: { $ref: "#/components/schemas/Error" }
+
+  schemas:
+    Error:
+      type: object
+      properties:
+        error: { type: string }
+      required: [error]
+
+    Patient:
+      type: object
+      properties:
+        id: { type: string }
+        name: { type: string }
+        phone: { type: string }
+        email: { type: [string, "null"] }
+        cpf: { type: [string, "null"] }
+        birthDate: { type: [string, "null"], format: date-time }
+        recordNumber: { type: [string, "null"] }
+        notes: { type: [string, "null"] }
+        createdAt: { type: string, format: date-time }
+        updatedAt: { type: string, format: date-time }
+
+    Appointment:
+      type: object
+      properties:
+        id: { type: string }
+        patientId: { type: string }
+        catalogItemId: { type: [string, "null"] }
+        title: { type: string }
+        startsAt: { type: string, format: date-time }
+        durationMinutes: { type: integer }
+        status:
+          type: string
+          enum: [scheduled, confirmed, cancelled, completed]
+        notes: { type: [string, "null"] }
+        createdAt: { type: string, format: date-time }
+        updatedAt: { type: string, format: date-time }
+        catalogItem:
+          description: Incluido al listar próximas citas y en el contexto.
+          oneOf:
+            - { $ref: "#/components/schemas/CatalogItem" }
+            - { type: "null" }
+
+    CatalogItem:
+      type: object
+      properties:
+        id: { type: string }
+        name: { type: string }
+        description: { type: [string, "null"] }
+        priceCents: { type: integer }
+        durationMinutes: { type: integer }
+        isActive: { type: boolean }
+        createdAt: { type: string, format: date-time }
+        updatedAt: { type: string, format: date-time }
+
+    QuoteLine:
+      type: object
+      properties:
+        id: { type: string }
+        quoteId: { type: string }
+        catalogItemId: { type: [string, "null"] }
+        description: { type: string }
+        quantity: { type: integer }
+        unitPriceCents: { type: integer }
+        totalPriceCents: { type: integer }
+
+    Quote:
+      type: object
+      properties:
+        id: { type: string }
+        patientId: { type: string }
+        number: { type: string }
+        issueDate: { type: string, format: date-time }
+        paymentMethod: { type: [string, "null"] }
+        validityDays: { type: [integer, "null"] }
+        discountCents: { type: integer }
+        notes: { type: [string, "null"] }
+        createdAt: { type: string, format: date-time }
+        updatedAt: { type: string, format: date-time }
+        patient:
+          description: Incluido al listar (no en la respuesta de creación).
+          oneOf:
+            - { $ref: "#/components/schemas/Patient" }
+            - { type: "null" }
+        lines:
+          description: Incluido al listar (no en la respuesta de creación).
+          type: array
+          items: { $ref: "#/components/schemas/QuoteLine" }
+
+    Prescription:
+      type: object
+      properties:
+        id: { type: string }
+        patientId: { type: string }
+        issueDate: { type: string, format: date-time }
+        notes: { type: [string, "null"] }
+        createdAt: { type: string, format: date-time }
+        updatedAt: { type: string, format: date-time }
+        patient:
+          description: Incluido al listar (no en la respuesta de creación).
+          oneOf:
+            - { $ref: "#/components/schemas/Patient" }
+            - { type: "null" }
+
+    MedicalCertificate:
+      type: object
+      properties:
+        id: { type: string }
+        patientId: { type: string }
+        issueDate: { type: string, format: date-time }
+        absenceStartDate: { type: string, format: date-time }
+        absenceEndDate: { type: string, format: date-time }
+        cid: { type: string }
+        city: { type: string }
+        notes: { type: [string, "null"] }
+        createdAt: { type: string, format: date-time }
+        updatedAt: { type: string, format: date-time }
+        patient:
+          description: Incluido al listar (no en la respuesta de creación).
+          oneOf:
+            - { $ref: "#/components/schemas/Patient" }
+            - { type: "null" }
+
+    PatientContext:
+      description: >
+        `isPatient: false` cuando el teléfono no existe. En caso contrario, el
+        contexto completo del paciente.
+      oneOf:
+        - type: object
+          properties:
+            isPatient: { const: false }
+          required: [isPatient]
+        - type: object
+          properties:
+            isPatient: { const: true }
+            patient:
+              type: object
+              properties:
+                id: { type: string }
+                name: { type: string }
+                phone: { type: string }
+            upcomingAppointments:
+              type: array
+              items: { $ref: "#/components/schemas/Appointment" }
+            lastQuote:
+              oneOf:
+                - { $ref: "#/components/schemas/Quote" }
+                - { type: "null" }
+            lastPrescription:
+              oneOf:
+                - { $ref: "#/components/schemas/Prescription" }
+                - { type: "null" }
+            activeCertificates:
+              type: array
+              items: { $ref: "#/components/schemas/MedicalCertificate" }
+          required: [isPatient, patient, upcomingAppointments, activeCertificates]
