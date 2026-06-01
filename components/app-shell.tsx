@@ -1,4 +1,4 @@
-import type { User } from "@/app/generated/prisma/client";
+import type { User } from "@prisma/client";
 import { Sidebar } from "@/components/layout/sidebar";
 import { Topbar } from "@/components/layout/topbar";
 import type { Role } from "@/lib/permissions";

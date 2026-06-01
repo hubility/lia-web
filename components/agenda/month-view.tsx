@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import type { Appointment, CatalogItem, Patient } from "@/app/generated/prisma/client";
+import type { Appointment, CatalogItem, Patient } from "@prisma/client";
 import { cn } from "@/lib/utils";
 import { addDays, formatIsoDate, isSameDay, startOfMonth, startOfWeek } from "@/lib/agenda/range";
 import { procedureColorVar } from "@/lib/agenda/colors";

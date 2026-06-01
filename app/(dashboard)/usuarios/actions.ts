@@ -1,6 +1,6 @@
 "use server";
 
-import type { UserRole } from "@/app/generated/prisma/client";
+import type { UserRole } from "@prisma/client";
 import { revalidatePath } from "next/cache";
 import { requiredText } from "@/lib/forms";
 import { requirePermission } from "@/lib/auth/guards";

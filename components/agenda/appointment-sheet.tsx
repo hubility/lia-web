@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState, useTransition } from "react";
-import type { Appointment, AppointmentStatus, CatalogItem, Patient } from "@/app/generated/prisma/client";
+import type { Appointment, AppointmentStatus, CatalogItem, Patient } from "@prisma/client";
 import {
   Sheet,
   SheetContent,

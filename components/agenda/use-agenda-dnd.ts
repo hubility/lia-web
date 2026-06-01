@@ -8,7 +8,7 @@ import {
   useSensor,
   useSensors,
 } from "@dnd-kit/core";
-import type { TimeBlock } from "@/app/generated/prisma/client";
+import type { TimeBlock } from "@prisma/client";
 import { toast } from "sonner";
 import {
   moveAppointmentAction,

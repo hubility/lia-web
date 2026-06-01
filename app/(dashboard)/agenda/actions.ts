@@ -1,6 +1,6 @@
 "use server";
 
-import type { AppointmentStatus, TimeBlockKind } from "@/app/generated/prisma/client";
+import type { AppointmentStatus, TimeBlockKind } from "@prisma/client";
 import { revalidatePath } from "next/cache";
 import { intValue, requiredText, textValue } from "@/lib/forms";
 import { parseDateTime } from "@/lib/dates";

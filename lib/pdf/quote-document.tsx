@@ -1,5 +1,5 @@
 import { Document, Page, Text, View } from "@react-pdf/renderer";
-import type { ClinicProfile, Patient, Quote, QuoteLine } from "@/app/generated/prisma/client";
+import type { ClinicProfile, Patient, Quote, QuoteLine } from "@prisma/client";
 import { formatBRL, formatDate } from "@/lib/pdf/utils";
 import { PdfFooter, PdfHeader, SignatureBox } from "./shared";
 import { pdfStyles } from "./styles";

@@ -5,7 +5,7 @@ import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { useMemo, useState } from "react";
 import { HugeiconsIcon } from "@hugeicons/react";
 import { ArrowLeft01Icon, ArrowRight01Icon, PlusSignIcon } from "@hugeicons/core-free-icons";
-import type { CatalogItem, Patient } from "@/app/generated/prisma/client";
+import type { CatalogItem, Patient } from "@prisma/client";
 import { cn } from "@/lib/utils";
 import {
   type AgendaView,

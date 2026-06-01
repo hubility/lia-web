@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import type { CatalogItem, Patient, TimeBlock } from "@/app/generated/prisma/client";
+import type { CatalogItem, Patient, TimeBlock } from "@prisma/client";
 import { DndContext, useDroppable } from "@dnd-kit/core";
 import { cn } from "@/lib/utils";
 import { isSameDay } from "@/lib/agenda/range";

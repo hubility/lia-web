@@ -1,4 +1,4 @@
-import type { TimeBlockKind } from "@/app/generated/prisma/client";
+import type { TimeBlockKind } from "@prisma/client";
 import { prisma } from "@/lib/db/prisma";
 
 export type TimeBlockInput = {

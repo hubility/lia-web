@@ -1,4 +1,4 @@
-import type { Appointment, TimeBlock } from "@/app/generated/prisma/client";
+import type { Appointment, TimeBlock } from "@prisma/client";
 import { findCollision } from "@/lib/agenda/collision";
 import { HOUR_START, HOUR_END } from "@/lib/agenda/dnd";
 import { utcToWallClock, wallClockToUtc } from "@/lib/clinic-tz";

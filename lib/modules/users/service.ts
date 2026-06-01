@@ -1,4 +1,4 @@
-import type { UserRole } from "@/app/generated/prisma/client";
+import type { UserRole } from "@prisma/client";
 import { prisma } from "@/lib/db/prisma";
 import { hashPassword } from "@/lib/auth/passwords";
 

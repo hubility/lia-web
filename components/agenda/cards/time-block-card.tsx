@@ -1,6 +1,6 @@
 "use client";
 
-import type { TimeBlock } from "@/app/generated/prisma/client";
+import type { TimeBlock } from "@prisma/client";
 import { useDraggable } from "@dnd-kit/core";
 import { CSS } from "@dnd-kit/utilities";
 import { cn } from "@/lib/utils";

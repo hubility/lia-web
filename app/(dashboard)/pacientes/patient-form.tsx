@@ -1,4 +1,4 @@
-import type { Patient } from "@/app/generated/prisma/client";
+import type { Patient } from "@prisma/client";
 
 export function PatientForm({
   patient,

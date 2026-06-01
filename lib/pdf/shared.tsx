@@ -1,5 +1,5 @@
 import { Text, View } from "@react-pdf/renderer";
-import type { ClinicProfile } from "@/app/generated/prisma/client";
+import type { ClinicProfile } from "@prisma/client";
 import { pdfStyles } from "./styles";
 
 export function PdfHeader({ clinic, title }: { clinic: ClinicProfile; title: string }) {

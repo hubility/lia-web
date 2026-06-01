@@ -1,4 +1,4 @@
-import type { Appointment, TimeBlock } from "@/app/generated/prisma/client";
+import type { Appointment, TimeBlock } from "@prisma/client";
 
 export type Candidate = {
   startsAt: Date;

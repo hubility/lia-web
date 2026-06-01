@@ -1,6 +1,6 @@
 "use client";
 
-import type { Appointment, CatalogItem, Patient } from "@/app/generated/prisma/client";
+import type { Appointment, CatalogItem, Patient } from "@prisma/client";
 import { HugeiconsIcon } from "@hugeicons/react";
 import { Tick02Icon } from "@hugeicons/core-free-icons";
 import { useDraggable } from "@dnd-kit/core";

@@ -1,4 +1,4 @@
-import type { AppointmentStatus } from "@/app/generated/prisma/client";
+import type { AppointmentStatus } from "@prisma/client";
 import { prisma } from "@/lib/db/prisma";
 
 export type AppointmentInput = {
