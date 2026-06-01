@@ -72,8 +72,8 @@ const catalogItems = [
 ];
 
 async function main() {
-  const adminEmail = process.env.SEED_ADMIN_EMAIL ?? "admin@lia.local";
-  const adminPassword = process.env.SEED_ADMIN_PASSWORD ?? "change-this-password";
+  const adminEmail = process.env.SEED_ADMIN_EMAIL ?? "lia@hubilityai.com";
+  const adminPassword = process.env.SEED_ADMIN_PASSWORD ?? "123456";
   const apiKey = createOpaqueToken();
 
   await prisma.user.upsert({
