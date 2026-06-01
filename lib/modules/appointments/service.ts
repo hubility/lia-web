@@ -11,12 +11,33 @@ export type AppointmentInput = {
   notes?: string | null;
 };
 
-export async function listAppointments(from?: Date, to?: Date) {
+export async function listAppointments(from?: Date, to?: Date, patientId?: string) {
   return prisma.appointment.findMany({
-    where: from && to ? { startsAt: { gte: from, lte: to } } : undefined,
+    where: {
+      ...(from && to ? { startsAt: { gte: from, lte: to } } : {}),
+      ...(patientId ? { patientId } : {}),
+    },
     include: { patient: true, catalogItem: true },
     orderBy: { startsAt: "asc" },
   });
+}
+
+// Próximas citas de un paciente: futuras y no canceladas, orden ascendente.
+// Es lo que el agente necesita para reagendar/cancelar.
+export async function listUpcomingAppointments(patientId: string, now: Date = new Date()) {
+  return prisma.appointment.findMany({
+    where: {
+      patientId,
+      startsAt: { gt: now },
+      status: { not: "cancelled" },
+    },
+    include: { catalogItem: true },
+    orderBy: { startsAt: "asc" },
+  });
+}
+
+export async function getAppointment(id: string) {
+  return prisma.appointment.findUnique({ where: { id } });
 }
 
 export async function createAppointment(input: AppointmentInput) {
@@ -33,4 +54,11 @@ export async function deleteAppointment(id: string) {
 
 export async function setAppointmentStatus(id: string, status: AppointmentStatus) {
   return prisma.appointment.update({ where: { id }, data: { status } });
+}
+
+export async function moveAppointment(id: string, startsAt: Date, durationMinutes: number) {
+  return prisma.appointment.update({
+    where: { id },
+    data: { startsAt, durationMinutes },
+  });
 }

@@ -55,6 +55,7 @@ export const ModelName = {
   ClinicProfile: 'ClinicProfile',
   Patient: 'Patient',
   CatalogItem: 'CatalogItem',
+  TimeBlock: 'TimeBlock',
   Appointment: 'Appointment',
   Quote: 'Quote',
   QuoteLine: 'QuoteLine',
@@ -162,6 +163,20 @@ export const CatalogItemScalarFieldEnum = {
 } as const
 
 export type CatalogItemScalarFieldEnum = (typeof CatalogItemScalarFieldEnum)[keyof typeof CatalogItemScalarFieldEnum]
+
+
+export const TimeBlockScalarFieldEnum = {
+  id: 'id',
+  label: 'label',
+  kind: 'kind',
+  startsAt: 'startsAt',
+  endsAt: 'endsAt',
+  notes: 'notes',
+  createdAt: 'createdAt',
+  updatedAt: 'updatedAt'
+} as const
+
+export type TimeBlockScalarFieldEnum = (typeof TimeBlockScalarFieldEnum)[keyof typeof TimeBlockScalarFieldEnum]
 
 
 export const AppointmentScalarFieldEnum = {

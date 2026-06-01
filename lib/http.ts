@@ -11,6 +11,16 @@ export async function withApiErrors(handler: () => Promise<Response>) {
     return await handler();
   } catch (error) {
     if (error instanceof Response) return error;
+    // Errores con `status` numérico (BookingError, validación) → ese código.
+    if (
+      error &&
+      typeof error === "object" &&
+      "status" in error &&
+      typeof (error as { status: unknown }).status === "number"
+    ) {
+      const e = error as { status: number; message?: string };
+      return jsonError(e.status, e.message ?? "Erro");
+    }
     const message = error instanceof Error ? error.message : "Erro interno";
     return jsonError(500, message);
   }

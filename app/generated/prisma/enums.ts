@@ -26,3 +26,11 @@ export const AppointmentStatus = {
 } as const
 
 export type AppointmentStatus = (typeof AppointmentStatus)[keyof typeof AppointmentStatus]
+
+
+export const TimeBlockKind = {
+  lunch: 'lunch',
+  block: 'block'
+} as const
+
+export type TimeBlockKind = (typeof TimeBlockKind)[keyof typeof TimeBlockKind]

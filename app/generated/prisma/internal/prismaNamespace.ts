@@ -396,6 +396,7 @@ export const ModelName = {
   ClinicProfile: 'ClinicProfile',
   Patient: 'Patient',
   CatalogItem: 'CatalogItem',
+  TimeBlock: 'TimeBlock',
   Appointment: 'Appointment',
   Quote: 'Quote',
   QuoteLine: 'QuoteLine',
@@ -417,7 +418,7 @@ export type TypeMap<ExtArgs extends runtime.Types.Extensions.InternalArgs = runt
     omit: GlobalOmitOptions
   }
   meta: {
-    modelProps: "user" | "session" | "apiKey" | "clinicProfile" | "patient" | "catalogItem" | "appointment" | "quote" | "quoteLine" | "prescription" | "prescriptionItem" | "medicalCertificate"
+    modelProps: "user" | "session" | "apiKey" | "clinicProfile" | "patient" | "catalogItem" | "timeBlock" | "appointment" | "quote" | "quoteLine" | "prescription" | "prescriptionItem" | "medicalCertificate"
     txIsolationLevel: TransactionIsolationLevel
   }
   model: {
@@ -862,6 +863,80 @@ export type TypeMap<ExtArgs extends runtime.Types.Extensions.InternalArgs = runt
         count: {
           args: Prisma.CatalogItemCountArgs<ExtArgs>
           result: runtime.Types.Utils.Optional<Prisma.CatalogItemCountAggregateOutputType> | number
+        }
+      }
+    }
+    TimeBlock: {
+      payload: Prisma.$TimeBlockPayload<ExtArgs>
+      fields: Prisma.TimeBlockFieldRefs
+      operations: {
+        findUnique: {
+          args: Prisma.TimeBlockFindUniqueArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$TimeBlockPayload> | null
+        }
+        findUniqueOrThrow: {
+          args: Prisma.TimeBlockFindUniqueOrThrowArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$TimeBlockPayload>
+        }
+        findFirst: {
+          args: Prisma.TimeBlockFindFirstArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$TimeBlockPayload> | null
+        }
+        findFirstOrThrow: {
+          args: Prisma.TimeBlockFindFirstOrThrowArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$TimeBlockPayload>
+        }
+        findMany: {
+          args: Prisma.TimeBlockFindManyArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$TimeBlockPayload>[]
+        }
+        create: {
+          args: Prisma.TimeBlockCreateArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$TimeBlockPayload>
+        }
+        createMany: {
+          args: Prisma.TimeBlockCreateManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        createManyAndReturn: {
+          args: Prisma.TimeBlockCreateManyAndReturnArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$TimeBlockPayload>[]
+        }
+        delete: {
+          args: Prisma.TimeBlockDeleteArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$TimeBlockPayload>
+        }
+        update: {
+          args: Prisma.TimeBlockUpdateArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$TimeBlockPayload>
+        }
+        deleteMany: {
+          args: Prisma.TimeBlockDeleteManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        updateMany: {
+          args: Prisma.TimeBlockUpdateManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        updateManyAndReturn: {
+          args: Prisma.TimeBlockUpdateManyAndReturnArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$TimeBlockPayload>[]
+        }
+        upsert: {
+          args: Prisma.TimeBlockUpsertArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$TimeBlockPayload>
+        }
+        aggregate: {
+          args: Prisma.TimeBlockAggregateArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.AggregateTimeBlock>
+        }
+        groupBy: {
+          args: Prisma.TimeBlockGroupByArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.TimeBlockGroupByOutputType>[]
+        }
+        count: {
+          args: Prisma.TimeBlockCountArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.TimeBlockCountAggregateOutputType> | number
         }
       }
     }
@@ -1433,6 +1508,20 @@ export const CatalogItemScalarFieldEnum = {
 export type CatalogItemScalarFieldEnum = (typeof CatalogItemScalarFieldEnum)[keyof typeof CatalogItemScalarFieldEnum]
 
 
+export const TimeBlockScalarFieldEnum = {
+  id: 'id',
+  label: 'label',
+  kind: 'kind',
+  startsAt: 'startsAt',
+  endsAt: 'endsAt',
+  notes: 'notes',
+  createdAt: 'createdAt',
+  updatedAt: 'updatedAt'
+} as const
+
+export type TimeBlockScalarFieldEnum = (typeof TimeBlockScalarFieldEnum)[keyof typeof TimeBlockScalarFieldEnum]
+
+
 export const AppointmentScalarFieldEnum = {
   id: 'id',
   patientId: 'patientId',
@@ -1611,6 +1700,20 @@ export type ListIntFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel,
 
 
 /**
+ * Reference to a field of type 'TimeBlockKind'
+ */
+export type EnumTimeBlockKindFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'TimeBlockKind'>
+    
+
+
+/**
+ * Reference to a field of type 'TimeBlockKind[]'
+ */
+export type ListEnumTimeBlockKindFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'TimeBlockKind[]'>
+    
+
+
+/**
  * Reference to a field of type 'AppointmentStatus'
  */
 export type EnumAppointmentStatusFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'AppointmentStatus'>
@@ -1730,6 +1833,7 @@ export type GlobalOmitConfig = {
   clinicProfile?: Prisma.ClinicProfileOmit
   patient?: Prisma.PatientOmit
   catalogItem?: Prisma.CatalogItemOmit
+  timeBlock?: Prisma.TimeBlockOmit
   appointment?: Prisma.AppointmentOmit
   quote?: Prisma.QuoteOmit
   quoteLine?: Prisma.QuoteLineOmit

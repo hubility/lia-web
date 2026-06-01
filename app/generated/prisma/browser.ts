@@ -48,6 +48,11 @@ export type Patient = Prisma.PatientModel
  */
 export type CatalogItem = Prisma.CatalogItemModel
 /**
+ * Model TimeBlock
+ * 
+ */
+export type TimeBlock = Prisma.TimeBlockModel
+/**
  * Model Appointment
  * 
  */

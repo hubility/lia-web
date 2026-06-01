@@ -14,6 +14,10 @@ export async function listCatalogItems(includeInactive = true) {
   });
 }
 
+export async function getCatalogItem(id: string) {
+  return prisma.catalogItem.findUnique({ where: { id } });
+}
+
 export async function createCatalogItem(input: CatalogInput) {
   return prisma.catalogItem.create({ data: input });
 }
