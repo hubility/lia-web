@@ -35,7 +35,7 @@ export function PatientList({ patients }: { patients: PatientDirectoryEntry[] })
   }, [patients, query]);
 
   return (
-    <aside className="sticky top-6 flex max-h-[calc(100vh-6rem)] w-72 shrink-0 flex-col gap-3">
+    <aside className="sticky top-6 flex max-h-[calc(100vh-6rem)] w-64 shrink-0 flex-col gap-3">
       <div className="flex items-center gap-2">
         <div className="relative flex-1">
           <span className="pointer-events-none absolute left-2.5 top-1/2 -translate-y-1/2 text-muted-foreground">
@@ -45,7 +45,7 @@ export function PatientList({ patients }: { patients: PatientDirectoryEntry[] })
             value={query}
             onChange={(e) => setQuery(e.target.value)}
             placeholder="Buscar paciente"
-            className="h-9 w-full rounded-md border bg-card pl-8 pr-3 text-sm outline-none focus:ring-2 focus:ring-ring"
+            className="h-9 w-full rounded-md border border-input bg-background pl-8 pr-3 text-sm outline-none focus:ring-2 focus:ring-ring"
           />
         </div>
         <button
@@ -58,9 +58,9 @@ export function PatientList({ patients }: { patients: PatientDirectoryEntry[] })
         </button>
       </div>
 
-      <div className="min-h-0 flex-1 overflow-y-auto rounded-lg border bg-card">
+      <div className="min-h-0 flex-1 overflow-y-auto rounded-md border">
         {filtered.length === 0 ? (
-          <p className="p-4 text-sm text-muted-foreground">Nenhum paciente.</p>
+          <p className="p-3 font-mono text-xs text-muted-foreground">Nenhum paciente.</p>
         ) : (
           filtered.map((p) => {
             const next = p.appointments[0];
@@ -70,8 +70,8 @@ export function PatientList({ patients }: { patients: PatientDirectoryEntry[] })
                 key={p.id}
                 href={`/pacientes/${p.id}`}
                 className={cn(
-                  "flex items-center gap-3 border-b px-3 py-2.5 transition-colors last:border-b-0",
-                  active ? "bg-secondary" : "hover:bg-secondary/60"
+                  "flex items-center gap-2.5 border-b px-3 py-2.5 transition-colors last:border-b-0",
+                  active ? "bg-secondary" : "hover:bg-secondary/50"
                 )}
               >
                 <Avatar size="sm">
@@ -84,7 +84,7 @@ export function PatientList({ patients }: { patients: PatientDirectoryEntry[] })
                   </p>
                 </div>
                 {next && (
-                  <span className="shrink-0 font-mono text-[10px] uppercase tracking-wider text-primary">
+                  <span className="shrink-0 font-mono text-[10px] tabular-nums text-muted-foreground">
                     {formatDate(next.startsAt)}
                   </span>
                 )}
@@ -94,7 +94,7 @@ export function PatientList({ patients }: { patients: PatientDirectoryEntry[] })
         )}
       </div>
 
-      <PatientSheet open={newOpen} onOpenChange={setNewOpen} />
+      <PatientSheet mode="create" open={newOpen} onOpenChange={setNewOpen} />
     </aside>
   );
 }
