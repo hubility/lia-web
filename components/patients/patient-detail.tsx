@@ -1,8 +1,9 @@
 "use client";
 
 import { useState, type ReactNode } from "react";
+import Link from "next/link";
 import { HugeiconsIcon } from "@hugeicons/react";
-import { WhatsappIcon, PencilEdit01Icon } from "@hugeicons/core-free-icons";
+import { WhatsappIcon, Calendar01Icon, PencilEdit01Icon } from "@hugeicons/core-free-icons";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { cn } from "@/lib/utils";
 import { formatDate, formatDateTime } from "@/lib/dates";
@@ -76,6 +77,13 @@ export function PatientDetail({ patient }: { patient: PatientDetailData }) {
           >
             <HugeiconsIcon icon={WhatsappIcon} size={16} strokeWidth={1.75} />
           </a>
+          <Link
+            href="/agenda"
+            aria-label="Agendar"
+            className="grid h-8 w-8 place-items-center rounded-md text-muted-foreground transition-colors hover:bg-secondary hover:text-foreground"
+          >
+            <HugeiconsIcon icon={Calendar01Icon} size={16} strokeWidth={1.75} />
+          </Link>
           <button
             type="button"
             onClick={() => setEditOpen(true)}
