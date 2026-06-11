@@ -205,3 +205,39 @@ select,
 textarea {
   font: inherit;
 }
+
+/* react-odontogram — domado al sistema visual de Lia (calma, sin glow ni marching-ants) */
+.Odontogram svg {
+  /* la librería fija width:100% inline → forzamos con !important para acotar el alto */
+  background-color: transparent !important;
+  width: auto !important;
+  height: auto !important;
+  max-height: 340px !important;
+  max-width: 100%;
+  margin-inline: auto;
+  display: block;
+  transition: color var(--duration-base) var(--ease-out);
+}
+.Odontogram.dark-theme svg {
+  background-color: transparent !important;
+}
+.Odontogram g.selected:hover path:first-of-type {
+  animation: none;
+  stroke-dasharray: none;
+  stroke-width: 1.5;
+  filter: none;
+  -webkit-filter: none;
+  transition: stroke var(--duration-base) var(--ease-out);
+}
+.Odontogram g[role="option"]:focus-visible {
+  outline: 2px solid var(--ring) !important;
+  outline-offset: 2px;
+  border-radius: 4px;
+}
+@media (prefers-reduced-motion: reduce) {
+  .Odontogram svg,
+  .Odontogram svg * {
+    transition: none !important;
+    animation: none !important;
+  }
+}

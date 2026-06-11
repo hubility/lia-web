@@ -34,9 +34,10 @@ export async function getPatientDetail(id: string) {
     where: { id },
     include: {
       appointments: { orderBy: { startsAt: "desc" } },
-      quotes: { orderBy: { issueDate: "desc" } },
+      quotes: { orderBy: { issueDate: "desc" }, include: { lines: true } },
       prescriptions: { orderBy: { issueDate: "desc" } },
       certificates: { orderBy: { issueDate: "desc" } },
+      toothTreatments: { orderBy: { createdAt: "asc" } },
     },
   });
 }
@@ -104,3 +105,23 @@ export async function getPatientContextByPhone(phone: string) {
     activeCertificates,
   };
 }
+
+// Lista para el directorio master-detail: pacientes + su próxima consulta
+// (futura y no cancelada). Separada de `listPatients` para no inflar el
+// payload que consume la agenda.
+export async function listPatientDirectory() {
+  const now = new Date();
+  return prisma.patient.findMany({
+    orderBy: { name: "asc" },
+    include: {
+      appointments: {
+        where: { startsAt: { gt: now }, status: { not: "cancelled" } },
+        orderBy: { startsAt: "asc" },
+        take: 1,
+      },
+    },
+  });
+}
+
+export type PatientDirectoryEntry = Awaited<ReturnType<typeof listPatientDirectory>>[number];
+export type PatientDetailData = Awaited<ReturnType<typeof getPatientDetail>>;

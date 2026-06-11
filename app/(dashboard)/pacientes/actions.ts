@@ -1,7 +1,6 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
-import { redirect } from "next/navigation";
 import { parseDate } from "@/lib/dates";
 import { requiredText, textValue } from "@/lib/forms";
 import { requirePermission } from "@/lib/auth/guards";
@@ -19,23 +18,21 @@ function patientInput(formData: FormData) {
   };
 }
 
-export async function createPatientAction(formData: FormData) {
+export async function createPatientAction(formData: FormData): Promise<string> {
   await requirePermission("patients", "create");
   const patient = await createPatient(patientInput(formData));
   revalidatePath("/pacientes");
-  redirect(`/pacientes/${patient.id}`);
+  return patient.id;
 }
 
-export async function updatePatientAction(id: string, formData: FormData) {
+export async function updatePatientAction(id: string, formData: FormData): Promise<void> {
   await requirePermission("patients", "update");
   await updatePatient(id, patientInput(formData));
   revalidatePath("/pacientes");
-  redirect(`/pacientes/${id}`);
 }
 
-export async function deletePatientAction(id: string) {
+export async function deletePatientAction(id: string): Promise<void> {
   await requirePermission("patients", "delete");
   await deletePatient(id);
   revalidatePath("/pacientes");
-  redirect("/pacientes");
 }
