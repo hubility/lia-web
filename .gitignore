@@ -46,3 +46,6 @@ next-env.d.ts
 
 # local isolated worktrees
 .worktrees/
+
+# local Claude Code config and tooling
+.claude/
