@@ -35,7 +35,7 @@ export function PatientList({ patients }: { patients: PatientDirectoryEntry[] })
   }, [patients, query]);
 
   return (
-    <aside className="sticky top-6 flex max-h-[calc(100vh-6rem)] w-64 shrink-0 flex-col gap-3">
+    <aside className="flex h-full w-64 shrink-0 flex-col gap-3 border-r pr-6">
       <div className="flex items-center gap-2">
         <div className="relative flex-1">
           <span className="pointer-events-none absolute left-2.5 top-1/2 -translate-y-1/2 text-muted-foreground">
@@ -58,7 +58,7 @@ export function PatientList({ patients }: { patients: PatientDirectoryEntry[] })
         </button>
       </div>
 
-      <div className="min-h-0 flex-1 overflow-y-auto rounded-md border">
+      <div className="min-h-0 flex-1 overflow-y-auto">
         {filtered.length === 0 ? (
           <p className="p-3 font-mono text-xs text-muted-foreground">Nenhum paciente.</p>
         ) : (

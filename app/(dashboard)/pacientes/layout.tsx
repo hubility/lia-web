@@ -7,9 +7,9 @@ export default async function PatientsLayout({ children }: { children: React.Rea
   const patients = await listPatientDirectory();
 
   return (
-    <div className="flex gap-6">
+    <div className="flex h-full">
       <PatientList patients={patients} />
-      <div className="min-w-0 flex-1">{children}</div>
+      <div className="min-h-0 min-w-0 flex-1 overflow-y-auto pl-6">{children}</div>
     </div>
   );
 }

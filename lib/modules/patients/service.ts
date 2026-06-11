@@ -37,6 +37,7 @@ export async function getPatientDetail(id: string) {
       quotes: { orderBy: { issueDate: "desc" }, include: { lines: true } },
       prescriptions: { orderBy: { issueDate: "desc" } },
       certificates: { orderBy: { issueDate: "desc" } },
+      toothTreatments: { orderBy: { createdAt: "asc" } },
     },
   });
 }

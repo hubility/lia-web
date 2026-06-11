@@ -25,6 +25,11 @@ enum TimeBlockKind {
   block
 }
 
+enum ToothTreatmentStatus {
+  planned
+  done
+}
+
 model User {
   id           String    @id @default(cuid())
   name         String
@@ -83,6 +88,7 @@ model Patient {
   quotes        Quote[]
   prescriptions Prescription[]
   certificates  MedicalCertificate[]
+  toothTreatments ToothTreatment[]
   createdAt     DateTime             @default(now())
   updatedAt     DateTime             @updatedAt
 }
@@ -96,6 +102,7 @@ model CatalogItem {
   isActive        Boolean       @default(true)
   appointments    Appointment[]
   quoteLines      QuoteLine[]
+  toothTreatments ToothTreatment[]
   createdAt       DateTime      @default(now())
   updatedAt       DateTime      @updatedAt
 }
@@ -137,6 +144,7 @@ model Quote {
   notes         String?
   patient       Patient     @relation(fields: [patientId], references: [id], onDelete: Cascade)
   lines         QuoteLine[]
+  toothTreatments ToothTreatment[]
   createdAt     DateTime    @default(now())
   updatedAt     DateTime    @updatedAt
 }
@@ -185,4 +193,23 @@ model MedicalCertificate {
   patient          Patient  @relation(fields: [patientId], references: [id], onDelete: Cascade)
   createdAt        DateTime @default(now())
   updatedAt        DateTime @updatedAt
+}
+
+model ToothTreatment {
+  id            String               @id @default(cuid())
+  patientId     String
+  toothFdi      String
+  catalogItemId String?
+  description   String
+  priceCents    Int
+  status        ToothTreatmentStatus @default(planned)
+  quoteId       String?
+  completedAt   DateTime?
+  patient       Patient              @relation(fields: [patientId], references: [id], onDelete: Cascade)
+  catalogItem   CatalogItem?         @relation(fields: [catalogItemId], references: [id], onDelete: SetNull)
+  quote         Quote?               @relation(fields: [quoteId], references: [id], onDelete: SetNull)
+  createdAt     DateTime             @default(now())
+  updatedAt     DateTime             @updatedAt
+
+  @@index([patientId])
 }

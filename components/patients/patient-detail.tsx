@@ -9,13 +9,15 @@ import { cn } from "@/lib/utils";
 import { formatDate, formatDateTime } from "@/lib/dates";
 import { formatBRL } from "@/lib/money";
 import { calculateAge, quoteValueCents } from "@/lib/patients/derive";
+import type { CatalogItem } from "@prisma/client";
 import type { PatientDetailData } from "@/lib/modules/patients/service";
 import { PatientSheet } from "@/components/patients/patient-sheet";
+import { OdontogramTab } from "@/components/patients/odontogram/odontogram-tab";
 
-type Tab = "resumo" | "consultas" | "orcamentos" | "receitas" | "atestados";
+type Tab = "odontograma" | "consultas" | "orcamentos" | "receitas" | "atestados";
 
 const TABS: { id: Tab; label: string }[] = [
-  { id: "resumo", label: "Resumo" },
+  { id: "odontograma", label: "Odontograma" },
   { id: "consultas", label: "Consultas" },
   { id: "orcamentos", label: "Orçamentos" },
   { id: "receitas", label: "Receitas" },
@@ -37,19 +39,9 @@ function onlyDigits(phone: string): string {
   return phone.replace(/\D/g, "");
 }
 
-export function PatientDetail({ patient }: { patient: PatientDetailData }) {
-  const [tab, setTab] = useState<Tab>("resumo");
+export function PatientDetail({ patient, catalog }: { patient: PatientDetailData; catalog: CatalogItem[] }) {
+  const [tab, setTab] = useState<Tab>("odontograma");
   const [editOpen, setEditOpen] = useState(false);
-
-  const now = Date.now();
-  const upcoming = patient.appointments.filter(
-    (a) => a.startsAt.getTime() > now && a.status !== "cancelled"
-  );
-  const past = patient.appointments.filter((a) => a.startsAt.getTime() <= now);
-  // appointments vienen en orden desc: el más próximo futuro es el último del tramo futuro.
-  const nextAppt = upcoming[upcoming.length - 1];
-  const lastVisit = past[0];
-  const totalQuoted = patient.quotes.reduce((sum, q) => sum + quoteValueCents(q), 0);
 
   return (
     <div className="flex flex-col gap-4">
@@ -97,26 +89,25 @@ export function PatientDetail({ patient }: { patient: PatientDetailData }) {
 
       <div className="flex w-fit items-center gap-0.5 rounded-md bg-secondary p-0.5">
         {TABS.map((t) => (
-          <button
+          <Link
             key={t.id}
             type="button"
             onClick={() => setTab(t.id)}
             className={cn(
               "rounded-sm px-3 py-1.5 font-mono text-xs font-semibold uppercase tracking-wider transition-colors",
               tab === t.id ? "bg-card text-foreground shadow-sm" : "text-muted-foreground hover:text-foreground"
-            )}
-          >
+            )} href={""}          >
             {t.label}
-          </button>
+          </Link>
         ))}
       </div>
 
-      {tab === "resumo" && (
-        <div className="grid gap-3 sm:grid-cols-3">
-          <SummaryCard label="Próxima consulta" value={nextAppt ? formatDateTime(nextAppt.startsAt) : "—"} />
-          <SummaryCard label="Última visita" value={lastVisit ? formatDate(lastVisit.startsAt) : "—"} />
-          <SummaryCard label="Total orçado" value={formatBRL(totalQuoted)} />
-        </div>
+      {tab === "odontograma" && (
+        <OdontogramTab
+          patientId={patient.id}
+          treatments={patient.toothTreatments}
+          catalog={catalog}
+        />
       )}
 
       {tab === "consultas" && (
@@ -165,17 +156,6 @@ export function PatientDetail({ patient }: { patient: PatientDetailData }) {
       )}
 
       <PatientSheet mode="edit" patient={patient} open={editOpen} onOpenChange={setEditOpen} />
-    </div>
-  );
-}
-
-function SummaryCard({ label, value }: { label: string; value: string }) {
-  return (
-    <div className="rounded-md border bg-card p-3">
-      <p className="font-mono text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
-        {label}
-      </p>
-      <p className="mt-1.5 font-mono text-sm tabular-nums text-foreground">{value}</p>
     </div>
   );
 }
