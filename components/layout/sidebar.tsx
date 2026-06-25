@@ -8,11 +8,8 @@ import { HugeiconsIcon } from "@hugeicons/react";
 import {
   Calendar03Icon,
   UserMultiple02Icon,
-  Invoice01Icon,
-  PrescriptionIcon,
-  Note02Icon,
   DentalToothIcon,
-  UserGroupIcon,
+  UserSettings01Icon,
   SidebarLeft01Icon,
   Sun02Icon,
   Moon02Icon,
@@ -51,11 +48,8 @@ export function Sidebar({ userRole }: SidebarProps) {
   const navItems: NavItem[] = [
     { label: "Agenda", href: "/agenda", icon: Calendar03Icon, resource: "appointments" },
     { label: "Pacientes", href: "/pacientes", icon: UserMultiple02Icon, resource: "patients" },
-    { label: "Orçamentos", href: "/orcamentos", icon: Invoice01Icon, resource: "quotes" },
-    { label: "Receitas", href: "/receitas", icon: PrescriptionIcon, resource: "prescriptions" },
-    { label: "Atestados", href: "/atestados", icon: Note02Icon, resource: "certificates" },
     { label: "Catálogo", href: "/catalogo", icon: DentalToothIcon, resource: "catalog" },
-    { label: "Usuários", href: "/usuarios", icon: UserGroupIcon, resource: "users" },
+    { label: "Usuários", href: "/usuarios", icon: UserSettings01Icon, resource: "users" },
   ];
 
   const visibleNav = navItems.filter((item) => canAccessResource(userRole, item.resource, "read"));
