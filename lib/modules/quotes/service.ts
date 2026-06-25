@@ -56,6 +56,21 @@ export async function createQuote(input: QuoteInput) {
   });
 }
 
+export async function updateQuote(id: string, input: QuoteInput) {
+  if (!input.lines.length) throw new Error("Orçamento requer ao menos um item.");
+  return prisma.quote.update({
+    where: { id },
+    data: {
+      issueDate: input.issueDate,
+      paymentMethod: input.paymentMethod,
+      validityDays: input.validityDays,
+      discountCents: input.discountCents,
+      notes: input.notes,
+      lines: { deleteMany: {}, create: lineData(input.lines) },
+    },
+  });
+}
+
 export async function deleteQuote(id: string) {
   return prisma.quote.delete({ where: { id } });
 }

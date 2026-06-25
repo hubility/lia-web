@@ -1,7 +1,8 @@
 "use client";
 
-import { useEffect, useState, useTransition } from "react";
+import { useMemo, useState, useTransition } from "react";
 import type { Appointment, AppointmentStatus, CatalogItem, Patient } from "@prisma/client";
+import { PatientCombobox } from "@/components/agenda/patient-combobox";
 import {
   Sheet,
   SheetContent,
@@ -58,13 +59,35 @@ export function AppointmentSheet(props: AppointmentSheetProps) {
 
   const [isPending, startTransition] = useTransition();
   const [error, setError] = useState<string | null>(null);
+  const [patientId, setPatientId] = useState(appointment?.patientId ?? "");
+  const [createdPatients, setCreatedPatients] = useState<Patient[]>([]);
 
-  useEffect(() => {
-    if (open) setError(null);
-  }, [open]);
+  const allPatients = useMemo(() => {
+    const byId = new Map<string, Patient>();
+    for (const p of createdPatients) byId.set(p.id, p);
+    for (const p of patients) byId.set(p.id, p);
+    return [...byId.values()].sort((a, b) => a.name.localeCompare(b.name));
+  }, [patients, createdPatients]);
+
+  // Reset al abrir, ajustando estado durante el render (patrón de React, sin effect):
+  // el sheet de "Nova consulta" persiste montado en agenda-header, así que hay que
+  // limpiar la selección/errores cada vez que pasa de cerrado a abierto.
+  const [prevOpen, setPrevOpen] = useState(open);
+  if (open !== prevOpen) {
+    setPrevOpen(open);
+    if (open) {
+      setError(null);
+      setPatientId(appointment?.patientId ?? "");
+      setCreatedPatients([]);
+    }
+  }
 
   async function handleSubmit(formData: FormData) {
     setError(null);
+    if (!patientId) {
+      setError("Selecione um paciente.");
+      return;
+    }
     startTransition(async () => {
       try {
         if (mode === "edit" && appointment) {
@@ -150,19 +173,13 @@ export function AppointmentSheet(props: AppointmentSheetProps) {
           )}
 
           <Field label="Paciente">
-            <select
-              name="patientId"
-              required
-              defaultValue={appointment?.patientId ?? ""}
-              className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
-            >
-              <option value="">Selecionar paciente…</option>
-              {patients.map((p) => (
-                <option key={p.id} value={p.id}>
-                  {p.name}
-                </option>
-              ))}
-            </select>
+            <input type="hidden" name="patientId" value={patientId} />
+            <PatientCombobox
+              patients={allPatients}
+              value={patientId}
+              onChange={setPatientId}
+              onCreated={(p) => setCreatedPatients((prev) => [p, ...prev])}
+            />
           </Field>
 
           <Field label="Procedimento">

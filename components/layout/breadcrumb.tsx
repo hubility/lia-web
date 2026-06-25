@@ -18,6 +18,17 @@ const SINGULAR: Record<string, string> = {
   catalogo: 'Item',
 };
 
+// Labels con acentos correctos para las rutas conocidas (el capitalize automático
+// pierde las tildes: "catalogo" -> "Catalogo").
+const LABEL: Record<string, string> = {
+  catalogo: 'Catálogo',
+  orcamentos: 'Orçamentos',
+  receitas: 'Receitas',
+  atestados: 'Atestados',
+  usuarios: 'Usuários',
+  prontuario: 'Prontuário',
+};
+
 function isId(segment: string): boolean {
   return /^[a-z0-9]{20,}$/i.test(segment);
 }
@@ -34,7 +45,7 @@ export function Breadcrumb() {
     const href = '/' + segments.slice(0, index + 1).join('/');
     const label = isId(segment)
       ? SINGULAR[segments[index - 1]] ?? 'Detalhe'
-      : segment.replace(/-/g, ' ').replace(/^\w/, (c) => c.toUpperCase());
+      : LABEL[segment] ?? segment.replace(/-/g, ' ').replace(/^\w/, (c) => c.toUpperCase());
     crumbs.push({ label, href });
   });
 
