@@ -1,7 +1,6 @@
 "use client";
 
 import { useMemo, useState, useTransition } from "react";
-import { useRouter } from "next/navigation";
 import type { CatalogItem } from "@prisma/client";
 import { HugeiconsIcon } from "@hugeicons/react";
 import { PlusSignIcon, Cancel01Icon, Search01Icon } from "@hugeicons/core-free-icons";
@@ -51,12 +50,15 @@ export function QuoteEditor({
   patient,
   catalog,
   quote,
+  onCancel,
+  onSaved,
 }: {
   patient: QuoteEditorPatient;
   catalog: CatalogItem[];
   quote?: QuoteEditorQuote;
+  onCancel: () => void;
+  onSaved: () => void;
 }) {
-  const router = useRouter();
   const [isPending, startTransition] = useTransition();
   const [error, setError] = useState<string | null>(null);
 
@@ -119,8 +121,7 @@ export function QuoteEditor({
           notes: notes.trim() || null,
           lines: normalized,
         });
-        router.push(`/pacientes/${patient.id}`);
-        router.refresh();
+        onSaved();
       } catch (e) {
         setError(e instanceof Error ? e.message : "Erro ao salvar orçamento");
       }
@@ -128,7 +129,7 @@ export function QuoteEditor({
   }
 
   return (
-    <div className="mx-auto flex max-w-3xl flex-col gap-4">
+    <div className="flex flex-col gap-4">
       <header className="flex flex-wrap items-end justify-between gap-3 border-b pb-3">
         <div>
           <h1 className="text-base font-semibold text-foreground">
@@ -289,7 +290,7 @@ export function QuoteEditor({
       <div className="flex items-center justify-end gap-2 border-t pt-3">
         <button
           type="button"
-          onClick={() => router.push(`/pacientes/${patient.id}`)}
+          onClick={onCancel}
           className="rounded-md px-3 py-2 text-sm text-muted-foreground transition-colors hover:text-foreground"
         >
           Cancelar

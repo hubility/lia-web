@@ -3,8 +3,6 @@
 import { useMemo, useState, useTransition } from "react";
 import type { CatalogItem, ToothTreatment } from "@prisma/client";
 import type { ToothConditionGroup, ToothDetail } from "react-odontogram";
-import { HugeiconsIcon } from "@hugeicons/react";
-import { Invoice01Icon } from "@hugeicons/core-free-icons";
 import { OdontogramChart } from "@/components/patients/odontogram/odontogram-chart";
 import { ToothPanel } from "@/components/patients/odontogram/tooth-panel";
 import { toothTypePt } from "@/lib/patients/tooth";
@@ -14,7 +12,6 @@ import {
   addToothTreatmentAction,
   markToothTreatmentDoneAction,
   removeToothTreatmentAction,
-  generateQuoteFromPlannedAction,
 } from "@/app/(dashboard)/pacientes/[id]/actions";
 
 interface Props {
@@ -56,7 +53,6 @@ export function OdontogramTab({ patientId, treatments, catalog }: Props) {
           date: t.status === "done" && t.completedAt ? formatDate(t.completedAt) : "—",
         }))
     : [];
-  const plannedPending = treatments.filter((t) => t.status === "planned" && t.quoteId === null).length;
 
   return (
     <div className="grid w-full max-w-5xl gap-x-8 gap-y-6 lg:grid-cols-[360px_minmax(0,1fr)]">
@@ -66,21 +62,9 @@ export function OdontogramTab({ patientId, treatments, catalog }: Props) {
       </div>
 
       <div className="flex flex-col gap-3">
-        <div className="flex items-center justify-between gap-2">
-          <h2 className="font-mono text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
-            Plano de tratamento
-          </h2>
-          <button
-            type="button"
-            disabled={plannedPending === 0 || pending}
-            onClick={() => startTransition(() => generateQuoteFromPlannedAction(patientId))}
-            className="inline-flex h-8 items-center gap-1.5 rounded-md bg-primary px-3 text-xs font-semibold text-primary-foreground transition-opacity hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-40"
-          >
-            <HugeiconsIcon icon={Invoice01Icon} size={14} strokeWidth={2} />
-            Gerar orçamento
-            {plannedPending > 0 && <span className="font-mono tabular-nums opacity-80">· {plannedPending}</span>}
-          </button>
-        </div>
+        <h2 className="font-mono text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
+          Plano de tratamento
+        </h2>
 
         <ToothPanel
           fdi={fdi}

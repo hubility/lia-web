@@ -30,6 +30,18 @@ export async function createPrescription(input: PrescriptionInput) {
   });
 }
 
+export async function updatePrescription(id: string, input: PrescriptionInput) {
+  if (!input.items.length) throw new Error("Receita requer ao menos um item.");
+  return prisma.prescription.update({
+    where: { id },
+    data: {
+      issueDate: input.issueDate,
+      notes: input.notes,
+      items: { deleteMany: {}, create: input.items },
+    },
+  });
+}
+
 export async function deletePrescription(id: string) {
   return prisma.prescription.delete({ where: { id } });
 }

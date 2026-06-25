@@ -4,8 +4,8 @@ import { useState, useTransition, type ReactNode } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { HugeiconsIcon } from "@hugeicons/react";
-import { WhatsappIcon, Calendar01Icon, PencilEdit01Icon, Add01Icon, File01Icon, Delete02Icon } from "@hugeicons/core-free-icons";
-import { deleteQuoteAction } from "@/app/(dashboard)/pacientes/[id]/actions";
+import { WhatsappIcon, Calendar01Icon, PencilEdit01Icon, Add01Icon, File01Icon, Delete02Icon, Invoice01Icon, PrescriptionIcon, Certificate01Icon } from "@hugeicons/core-free-icons";
+import { deleteQuoteAction, deletePrescriptionAction, deleteCertificateAction } from "@/app/(dashboard)/pacientes/[id]/actions";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { cn } from "@/lib/utils";
 import { formatDate, formatDateTime } from "@/lib/dates";
@@ -15,6 +15,9 @@ import type { CatalogItem } from "@prisma/client";
 import type { PatientDetailData } from "@/lib/modules/patients/service";
 import { PatientSheet } from "@/components/patients/patient-sheet";
 import { OdontogramTab } from "@/components/patients/odontogram/odontogram-tab";
+import { QuoteEditor, type QuoteEditorQuote } from "@/components/patients/quotes/quote-editor";
+import { PrescriptionEditor, type PrescriptionEditorPrescription } from "@/components/patients/prescriptions/prescription-editor";
+import { CertificateEditor, type CertificateEditorCertificate } from "@/components/patients/certificates/certificate-editor";
 
 type Tab = "odontograma" | "consultas" | "orcamentos" | "receitas" | "atestados";
 
@@ -46,11 +49,30 @@ export function PatientDetail({ patient, catalog }: { patient: PatientDetailData
   const [editOpen, setEditOpen] = useState(false);
   const router = useRouter();
   const [isPending, startTransition] = useTransition();
+  const [editingQuote, setEditingQuote] = useState<"new" | QuoteEditorQuote | null>(null);
+  const [editingPrescription, setEditingPrescription] = useState<"new" | PrescriptionEditorPrescription | null>(null);
+  const [editingCertificate, setEditingCertificate] = useState<"new" | CertificateEditorCertificate | null>(null);
 
   function handleDeleteQuote(quoteId: string) {
     if (!confirm("Excluir orçamento?")) return;
     startTransition(async () => {
       await deleteQuoteAction(quoteId, patient.id);
+      router.refresh();
+    });
+  }
+
+  function handleDeletePrescription(prescriptionId: string) {
+    if (!confirm("Excluir receita?")) return;
+    startTransition(async () => {
+      await deletePrescriptionAction(prescriptionId, patient.id);
+      router.refresh();
+    });
+  }
+
+  function handleDeleteCertificate(certificateId: string) {
+    if (!confirm("Excluir atestado?")) return;
+    startTransition(async () => {
+      await deleteCertificateAction(certificateId, patient.id);
       router.refresh();
     });
   }
@@ -101,17 +123,16 @@ export function PatientDetail({ patient, catalog }: { patient: PatientDetailData
 
       <div className="flex w-fit items-center gap-0.5 rounded-md bg-secondary p-0.5">
         {TABS.map((t) => (
-          <button
+          <Link
             key={t.id}
             type="button"
             onClick={() => setTab(t.id)}
             className={cn(
               "rounded-sm px-3 py-1.5 font-mono text-xs font-semibold uppercase tracking-wider transition-colors",
               tab === t.id ? "bg-card text-foreground shadow-sm" : "text-muted-foreground hover:text-foreground"
-            )}
-          >
+            )} href={""}          >
             {t.label}
-          </button>
+          </Link>
         ))}
       </div>
 
@@ -138,86 +159,305 @@ export function PatientDetail({ patient, catalog }: { patient: PatientDetailData
       )}
 
       {tab === "orcamentos" && (
-        <div className="flex flex-col gap-3">
-          <div className="flex justify-end">
-            <button
-              type="button"
-              onClick={() => router.push(`/pacientes/${patient.id}/orcamentos/novo`)}
-              className="inline-flex h-8 items-center gap-1.5 rounded-md bg-primary px-3 text-xs font-semibold text-primary-foreground transition-opacity hover:opacity-90"
-            >
-              <HugeiconsIcon icon={Add01Icon} size={14} strokeWidth={2} />
-              Novo orçamento
-            </button>
-          </div>
-          <div className="rounded-md border bg-card">
-            {patient.quotes.length === 0 ? (
-              <div className="flex flex-col items-center gap-2 p-6 text-center">
-                <p className="font-mono text-xs text-muted-foreground">Sem orçamentos.</p>
+        editingQuote !== null ? (
+          <QuoteEditor
+            patient={{ id: patient.id, name: patient.name, phone: patient.phone, cpf: patient.cpf, recordNumber: patient.recordNumber }}
+            catalog={catalog}
+            quote={editingQuote === "new" ? undefined : editingQuote}
+            onCancel={() => setEditingQuote(null)}
+            onSaved={() => {
+              setEditingQuote(null);
+              router.refresh();
+            }}
+          />
+        ) : (
+          <div className="flex flex-col gap-3">
+            {patient.quotes.length > 0 && (
+              <div className="flex justify-end">
                 <button
                   type="button"
-                  onClick={() => router.push(`/pacientes/${patient.id}/orcamentos/novo`)}
-                  className="text-xs font-semibold text-primary hover:underline"
+                  onClick={() => setEditingQuote("new")}
+                  className="inline-flex h-8 items-center gap-1 rounded-md bg-secondary px-2.5 text-xs font-semibold text-secondary-foreground transition-colors hover:bg-secondary/70"
                 >
-                  Criar o primeiro orçamento
+                  <HugeiconsIcon icon={Add01Icon} size={13} strokeWidth={2} />
+                  Novo orçamento
+                </button>
+              </div>
+            )}
+            {patient.quotes.length === 0 ? (
+              <div className="flex flex-col items-center justify-center gap-3 rounded-md border border-dashed bg-card px-6 py-14 text-center">
+                <div className="grid h-12 w-12 place-items-center rounded-full bg-secondary text-muted-foreground">
+                  <HugeiconsIcon icon={Invoice01Icon} size={22} strokeWidth={1.5} />
+                </div>
+                <div className="flex flex-col gap-1">
+                  <p className="text-sm font-semibold text-foreground">Nenhum orçamento ainda</p>
+                  <p className="max-w-xs text-xs text-muted-foreground">
+                    Monte um orçamento profissional a partir do catálogo de procedimentos ou de itens livres.
+                  </p>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setEditingQuote("new")}
+                  className="mt-1 inline-flex h-9 items-center gap-1.5 rounded-md bg-primary px-4 text-xs font-semibold text-primary-foreground transition-opacity hover:opacity-90"
+                >
+                  <HugeiconsIcon icon={Add01Icon} size={14} strokeWidth={2} />
+                  Criar primeiro orçamento
                 </button>
               </div>
             ) : (
-              patient.quotes.map((q) => (
-                <div key={q.id} className="flex items-center justify-between gap-3 border-b px-3 py-2.5 last:border-b-0">
-                  <div className="min-w-0">
-                    <p className="truncate text-sm text-foreground">Orçamento {q.number}</p>
-                    <p className="font-mono text-xs tabular-nums text-muted-foreground">{formatDate(q.issueDate)}</p>
+              <div className="rounded-md border bg-card">
+                {(
+                patient.quotes.map((q) => (
+                  <div key={q.id} className="flex items-center justify-between gap-3 border-b px-3 py-2.5 last:border-b-0">
+                    <div className="min-w-0">
+                      <p className="truncate text-sm text-foreground">Orçamento {q.number}</p>
+                      <p className="font-mono text-xs tabular-nums text-muted-foreground">{formatDate(q.issueDate)}</p>
+                    </div>
+                    <div className="flex shrink-0 items-center gap-1.5">
+                      <span className="font-mono text-xs tabular-nums text-muted-foreground">{formatBRL(quoteValueCents(q))}</span>
+                      <a
+                        href={`/api/pdf/orcamentos/${q.id}`}
+                        aria-label="PDF"
+                        className="grid h-7 w-7 place-items-center rounded-md text-muted-foreground transition-colors hover:bg-secondary hover:text-foreground"
+                      >
+                        <HugeiconsIcon icon={File01Icon} size={14} strokeWidth={1.75} />
+                      </a>
+                      <button
+                        type="button"
+                        onClick={() =>
+                          setEditingQuote({
+                            id: q.id,
+                            number: q.number,
+                            issueDate: q.issueDate,
+                            paymentMethod: q.paymentMethod,
+                            validityDays: q.validityDays,
+                            discountCents: q.discountCents,
+                            notes: q.notes,
+                            lines: q.lines.map((l) => ({
+                              catalogItemId: l.catalogItemId,
+                              description: l.description,
+                              quantity: l.quantity,
+                              unitPriceCents: l.unitPriceCents,
+                            })),
+                          })
+                        }
+                        aria-label="Editar"
+                        className="grid h-7 w-7 place-items-center rounded-md text-muted-foreground transition-colors hover:bg-secondary hover:text-foreground"
+                      >
+                        <HugeiconsIcon icon={PencilEdit01Icon} size={14} strokeWidth={1.75} />
+                      </button>
+                      <button
+                        type="button"
+                        disabled={isPending}
+                        onClick={() => handleDeleteQuote(q.id)}
+                        aria-label="Excluir"
+                        className="grid h-7 w-7 place-items-center rounded-md text-muted-foreground transition-colors hover:bg-secondary hover:text-destructive disabled:opacity-50"
+                      >
+                        <HugeiconsIcon icon={Delete02Icon} size={14} strokeWidth={1.75} />
+                      </button>
+                    </div>
                   </div>
-                  <div className="flex shrink-0 items-center gap-1.5">
-                    <span className="font-mono text-xs tabular-nums text-muted-foreground">{formatBRL(quoteValueCents(q))}</span>
-                    <a
-                      href={`/api/pdf/orcamentos/${q.id}`}
-                      aria-label="PDF"
-                      className="grid h-7 w-7 place-items-center rounded-md text-muted-foreground transition-colors hover:bg-secondary hover:text-foreground"
-                    >
-                      <HugeiconsIcon icon={File01Icon} size={14} strokeWidth={1.75} />
-                    </a>
-                    <button
-                      type="button"
-                      onClick={() => router.push(`/pacientes/${patient.id}/orcamentos/${q.id}`)}
-                      aria-label="Editar"
-                      className="grid h-7 w-7 place-items-center rounded-md text-muted-foreground transition-colors hover:bg-secondary hover:text-foreground"
-                    >
-                      <HugeiconsIcon icon={PencilEdit01Icon} size={14} strokeWidth={1.75} />
-                    </button>
-                    <button
-                      type="button"
-                      disabled={isPending}
-                      onClick={() => handleDeleteQuote(q.id)}
-                      aria-label="Excluir"
-                      className="grid h-7 w-7 place-items-center rounded-md text-muted-foreground transition-colors hover:bg-secondary hover:text-destructive disabled:opacity-50"
-                    >
-                      <HugeiconsIcon icon={Delete02Icon} size={14} strokeWidth={1.75} />
-                    </button>
-                  </div>
-                </div>
-              ))
+                ))
+              )}
+              </div>
             )}
           </div>
-        </div>
+        )
       )}
 
       {tab === "receitas" && (
-        <Section items={patient.prescriptions} empty="Sem receitas.">
-          {(p) => <Row key={p.id} left="Receita" meta={formatDate(p.issueDate)} />}
-        </Section>
+        editingPrescription !== null ? (
+          <PrescriptionEditor
+            patient={{ id: patient.id, name: patient.name, phone: patient.phone, cpf: patient.cpf, recordNumber: patient.recordNumber }}
+            prescription={editingPrescription === "new" ? undefined : editingPrescription}
+            onCancel={() => setEditingPrescription(null)}
+            onSaved={() => {
+              setEditingPrescription(null);
+              router.refresh();
+            }}
+          />
+        ) : (
+          <div className="flex flex-col gap-3">
+            {patient.prescriptions.length > 0 && (
+              <div className="flex justify-end">
+                <button
+                  type="button"
+                  onClick={() => setEditingPrescription("new")}
+                  className="inline-flex h-8 items-center gap-1 rounded-md bg-secondary px-2.5 text-xs font-semibold text-secondary-foreground transition-colors hover:bg-secondary/70"
+                >
+                  <HugeiconsIcon icon={Add01Icon} size={13} strokeWidth={2} />
+                  Nova receita
+                </button>
+              </div>
+            )}
+            {patient.prescriptions.length === 0 ? (
+              <div className="flex flex-col items-center justify-center gap-3 rounded-md border border-dashed bg-card px-6 py-14 text-center">
+                <div className="grid h-12 w-12 place-items-center rounded-full bg-secondary text-muted-foreground">
+                  <HugeiconsIcon icon={PrescriptionIcon} size={22} strokeWidth={1.5} />
+                </div>
+                <div className="flex flex-col gap-1">
+                  <p className="text-sm font-semibold text-foreground">Nenhuma receita ainda</p>
+                  <p className="max-w-xs text-xs text-muted-foreground">
+                    Monte uma receita com os medicamentos e instruções de uso para o paciente.
+                  </p>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setEditingPrescription("new")}
+                  className="mt-1 inline-flex h-9 items-center gap-1.5 rounded-md bg-primary px-4 text-xs font-semibold text-primary-foreground transition-opacity hover:opacity-90"
+                >
+                  <HugeiconsIcon icon={Add01Icon} size={14} strokeWidth={2} />
+                  Criar primeira receita
+                </button>
+              </div>
+            ) : (
+              <div className="rounded-md border bg-card">
+                {patient.prescriptions.map((p) => (
+                  <div key={p.id} className="flex items-center justify-between gap-3 border-b px-3 py-2.5 last:border-b-0">
+                    <div className="min-w-0">
+                      <p className="truncate text-sm text-foreground">
+                        Receita · {p.items.length} {p.items.length === 1 ? "item" : "itens"}
+                      </p>
+                      <p className="font-mono text-xs tabular-nums text-muted-foreground">{formatDate(p.issueDate)}</p>
+                    </div>
+                    <div className="flex shrink-0 items-center gap-1.5">
+                      <a
+                        href={`/api/pdf/receitas/${p.id}`}
+                        aria-label="PDF"
+                        className="grid h-7 w-7 place-items-center rounded-md text-muted-foreground transition-colors hover:bg-secondary hover:text-foreground"
+                      >
+                        <HugeiconsIcon icon={File01Icon} size={14} strokeWidth={1.75} />
+                      </a>
+                      <button
+                        type="button"
+                        onClick={() =>
+                          setEditingPrescription({
+                            id: p.id,
+                            issueDate: p.issueDate,
+                            notes: p.notes,
+                            items: p.items.map((i) => ({ medicine: i.medicine, instructions: i.instructions })),
+                          })
+                        }
+                        aria-label="Editar"
+                        className="grid h-7 w-7 place-items-center rounded-md text-muted-foreground transition-colors hover:bg-secondary hover:text-foreground"
+                      >
+                        <HugeiconsIcon icon={PencilEdit01Icon} size={14} strokeWidth={1.75} />
+                      </button>
+                      <button
+                        type="button"
+                        disabled={isPending}
+                        onClick={() => handleDeletePrescription(p.id)}
+                        aria-label="Excluir"
+                        className="grid h-7 w-7 place-items-center rounded-md text-muted-foreground transition-colors hover:bg-secondary hover:text-destructive disabled:opacity-50"
+                      >
+                        <HugeiconsIcon icon={Delete02Icon} size={14} strokeWidth={1.75} />
+                      </button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        )
       )}
 
       {tab === "atestados" && (
-        <Section items={patient.certificates} empty="Sem atestados.">
-          {(c) => (
-            <Row
-              key={c.id}
-              left={`CID ${c.cid}`}
-              meta={`${formatDate(c.absenceStartDate)} – ${formatDate(c.absenceEndDate)}`}
-            />
-          )}
-        </Section>
+        editingCertificate !== null ? (
+          <CertificateEditor
+            patient={{ id: patient.id, name: patient.name, phone: patient.phone, cpf: patient.cpf, recordNumber: patient.recordNumber }}
+            certificate={editingCertificate === "new" ? undefined : editingCertificate}
+            onCancel={() => setEditingCertificate(null)}
+            onSaved={() => {
+              setEditingCertificate(null);
+              router.refresh();
+            }}
+          />
+        ) : (
+          <div className="flex flex-col gap-3">
+            {patient.certificates.length > 0 && (
+              <div className="flex justify-end">
+                <button
+                  type="button"
+                  onClick={() => setEditingCertificate("new")}
+                  className="inline-flex h-8 items-center gap-1 rounded-md bg-secondary px-2.5 text-xs font-semibold text-secondary-foreground transition-colors hover:bg-secondary/70"
+                >
+                  <HugeiconsIcon icon={Add01Icon} size={13} strokeWidth={2} />
+                  Novo atestado
+                </button>
+              </div>
+            )}
+            {patient.certificates.length === 0 ? (
+              <div className="flex flex-col items-center justify-center gap-3 rounded-md border border-dashed bg-card px-6 py-14 text-center">
+                <div className="grid h-12 w-12 place-items-center rounded-full bg-secondary text-muted-foreground">
+                  <HugeiconsIcon icon={Certificate01Icon} size={22} strokeWidth={1.5} />
+                </div>
+                <div className="flex flex-col gap-1">
+                  <p className="text-sm font-semibold text-foreground">Nenhum atestado ainda</p>
+                  <p className="max-w-xs text-xs text-muted-foreground">
+                    Emita um atestado de afastamento com o período, o CID e as observações para o paciente.
+                  </p>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setEditingCertificate("new")}
+                  className="mt-1 inline-flex h-9 items-center gap-1.5 rounded-md bg-primary px-4 text-xs font-semibold text-primary-foreground transition-opacity hover:opacity-90"
+                >
+                  <HugeiconsIcon icon={Add01Icon} size={14} strokeWidth={2} />
+                  Criar primeiro atestado
+                </button>
+              </div>
+            ) : (
+              <div className="rounded-md border bg-card">
+                {patient.certificates.map((c) => (
+                  <div key={c.id} className="flex items-center justify-between gap-3 border-b px-3 py-2.5 last:border-b-0">
+                    <div className="min-w-0">
+                      <p className="truncate text-sm text-foreground">Atestado · CID {c.cid}</p>
+                      <p className="font-mono text-xs tabular-nums text-muted-foreground">
+                        {formatDate(c.absenceStartDate)} – {formatDate(c.absenceEndDate)}
+                      </p>
+                    </div>
+                    <div className="flex shrink-0 items-center gap-1.5">
+                      <a
+                        href={`/api/pdf/atestados/${c.id}`}
+                        aria-label="PDF"
+                        className="grid h-7 w-7 place-items-center rounded-md text-muted-foreground transition-colors hover:bg-secondary hover:text-foreground"
+                      >
+                        <HugeiconsIcon icon={File01Icon} size={14} strokeWidth={1.75} />
+                      </a>
+                      <button
+                        type="button"
+                        onClick={() =>
+                          setEditingCertificate({
+                            id: c.id,
+                            issueDate: c.issueDate,
+                            absenceStartDate: c.absenceStartDate,
+                            absenceEndDate: c.absenceEndDate,
+                            cid: c.cid,
+                            city: c.city,
+                            notes: c.notes,
+                          })
+                        }
+                        aria-label="Editar"
+                        className="grid h-7 w-7 place-items-center rounded-md text-muted-foreground transition-colors hover:bg-secondary hover:text-foreground"
+                      >
+                        <HugeiconsIcon icon={PencilEdit01Icon} size={14} strokeWidth={1.75} />
+                      </button>
+                      <button
+                        type="button"
+                        disabled={isPending}
+                        onClick={() => handleDeleteCertificate(c.id)}
+                        aria-label="Excluir"
+                        className="grid h-7 w-7 place-items-center rounded-md text-muted-foreground transition-colors hover:bg-secondary hover:text-destructive disabled:opacity-50"
+                      >
+                        <HugeiconsIcon icon={Delete02Icon} size={14} strokeWidth={1.75} />
+                      </button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        )
       )}
 
       <PatientSheet mode="edit" patient={patient} open={editOpen} onOpenChange={setEditOpen} />

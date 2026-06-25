@@ -15,6 +15,16 @@ import {
   deleteQuote,
   type QuoteLineInput,
 } from "@/lib/modules/quotes/service";
+import {
+  createPrescription,
+  updatePrescription,
+  deletePrescription,
+} from "@/lib/modules/prescriptions/service";
+import {
+  createCertificate,
+  updateCertificate,
+  deleteCertificate,
+} from "@/lib/modules/certificates/service";
 
 export async function addToothTreatmentAction(input: {
   patientId: string;
@@ -76,5 +86,69 @@ export async function saveQuoteAction(input: SaveQuoteInput): Promise<string> {
 export async function deleteQuoteAction(quoteId: string, patientId: string): Promise<void> {
   await requirePermission("quotes", "delete");
   await deleteQuote(quoteId);
+  revalidatePath(`/pacientes/${patientId}`);
+}
+
+export type SavePrescriptionInput = {
+  prescriptionId?: string;
+  patientId: string;
+  issueDate: string;
+  notes: string | null;
+  items: { medicine: string; instructions: string; position: number }[];
+};
+
+export async function savePrescriptionAction(input: SavePrescriptionInput): Promise<string> {
+  await requirePermission("prescriptions", input.prescriptionId ? "update" : "create");
+  const data = {
+    patientId: input.patientId,
+    issueDate: parseDate(input.issueDate),
+    notes: input.notes,
+    items: input.items,
+  };
+  const prescription = input.prescriptionId
+    ? await updatePrescription(input.prescriptionId, data)
+    : await createPrescription(data);
+  revalidatePath(`/pacientes/${input.patientId}`);
+  return prescription.id;
+}
+
+export async function deletePrescriptionAction(prescriptionId: string, patientId: string): Promise<void> {
+  await requirePermission("prescriptions", "delete");
+  await deletePrescription(prescriptionId);
+  revalidatePath(`/pacientes/${patientId}`);
+}
+
+export type SaveCertificateInput = {
+  certificateId?: string;
+  patientId: string;
+  issueDate: string;
+  absenceStartDate: string;
+  absenceEndDate: string;
+  cid: string;
+  city: string;
+  notes: string | null;
+};
+
+export async function saveCertificateAction(input: SaveCertificateInput): Promise<string> {
+  await requirePermission("certificates", input.certificateId ? "update" : "create");
+  const data = {
+    patientId: input.patientId,
+    issueDate: parseDate(input.issueDate),
+    absenceStartDate: parseDate(input.absenceStartDate),
+    absenceEndDate: parseDate(input.absenceEndDate),
+    cid: input.cid,
+    city: input.city,
+    notes: input.notes,
+  };
+  const certificate = input.certificateId
+    ? await updateCertificate(input.certificateId, data)
+    : await createCertificate(data);
+  revalidatePath(`/pacientes/${input.patientId}`);
+  return certificate.id;
+}
+
+export async function deleteCertificateAction(certificateId: string, patientId: string): Promise<void> {
+  await requirePermission("certificates", "delete");
+  await deleteCertificate(certificateId);
   revalidatePath(`/pacientes/${patientId}`);
 }
