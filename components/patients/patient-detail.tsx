@@ -1,9 +1,11 @@
 "use client";
 
-import { useState, type ReactNode } from "react";
+import { useState, useTransition, type ReactNode } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { HugeiconsIcon } from "@hugeicons/react";
-import { WhatsappIcon, Calendar01Icon, PencilEdit01Icon } from "@hugeicons/core-free-icons";
+import { WhatsappIcon, Calendar01Icon, PencilEdit01Icon, Add01Icon, File01Icon, Delete02Icon } from "@hugeicons/core-free-icons";
+import { deleteQuoteAction } from "@/app/(dashboard)/pacientes/[id]/actions";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { cn } from "@/lib/utils";
 import { formatDate, formatDateTime } from "@/lib/dates";
@@ -42,6 +44,16 @@ function onlyDigits(phone: string): string {
 export function PatientDetail({ patient, catalog }: { patient: PatientDetailData; catalog: CatalogItem[] }) {
   const [tab, setTab] = useState<Tab>("odontograma");
   const [editOpen, setEditOpen] = useState(false);
+  const router = useRouter();
+  const [isPending, startTransition] = useTransition();
+
+  function handleDeleteQuote(quoteId: string) {
+    if (!confirm("Excluir orçamento?")) return;
+    startTransition(async () => {
+      await deleteQuoteAction(quoteId, patient.id);
+      router.refresh();
+    });
+  }
 
   return (
     <div className="flex flex-col gap-4">
@@ -89,16 +101,17 @@ export function PatientDetail({ patient, catalog }: { patient: PatientDetailData
 
       <div className="flex w-fit items-center gap-0.5 rounded-md bg-secondary p-0.5">
         {TABS.map((t) => (
-          <Link
+          <button
             key={t.id}
             type="button"
             onClick={() => setTab(t.id)}
             className={cn(
               "rounded-sm px-3 py-1.5 font-mono text-xs font-semibold uppercase tracking-wider transition-colors",
               tab === t.id ? "bg-card text-foreground shadow-sm" : "text-muted-foreground hover:text-foreground"
-            )} href={""}          >
+            )}
+          >
             {t.label}
-          </Link>
+          </button>
         ))}
       </div>
 
@@ -125,16 +138,68 @@ export function PatientDetail({ patient, catalog }: { patient: PatientDetailData
       )}
 
       {tab === "orcamentos" && (
-        <Section items={patient.quotes} empty="Sem orçamentos.">
-          {(q) => (
-            <Row
-              key={q.id}
-              left={`Orçamento ${q.number}`}
-              meta={formatDate(q.issueDate)}
-              right={formatBRL(quoteValueCents(q))}
-            />
-          )}
-        </Section>
+        <div className="flex flex-col gap-3">
+          <div className="flex justify-end">
+            <button
+              type="button"
+              onClick={() => router.push(`/pacientes/${patient.id}/orcamentos/novo`)}
+              className="inline-flex h-8 items-center gap-1.5 rounded-md bg-primary px-3 text-xs font-semibold text-primary-foreground transition-opacity hover:opacity-90"
+            >
+              <HugeiconsIcon icon={Add01Icon} size={14} strokeWidth={2} />
+              Novo orçamento
+            </button>
+          </div>
+          <div className="rounded-md border bg-card">
+            {patient.quotes.length === 0 ? (
+              <div className="flex flex-col items-center gap-2 p-6 text-center">
+                <p className="font-mono text-xs text-muted-foreground">Sem orçamentos.</p>
+                <button
+                  type="button"
+                  onClick={() => router.push(`/pacientes/${patient.id}/orcamentos/novo`)}
+                  className="text-xs font-semibold text-primary hover:underline"
+                >
+                  Criar o primeiro orçamento
+                </button>
+              </div>
+            ) : (
+              patient.quotes.map((q) => (
+                <div key={q.id} className="flex items-center justify-between gap-3 border-b px-3 py-2.5 last:border-b-0">
+                  <div className="min-w-0">
+                    <p className="truncate text-sm text-foreground">Orçamento {q.number}</p>
+                    <p className="font-mono text-xs tabular-nums text-muted-foreground">{formatDate(q.issueDate)}</p>
+                  </div>
+                  <div className="flex shrink-0 items-center gap-1.5">
+                    <span className="font-mono text-xs tabular-nums text-muted-foreground">{formatBRL(quoteValueCents(q))}</span>
+                    <a
+                      href={`/api/pdf/orcamentos/${q.id}`}
+                      aria-label="PDF"
+                      className="grid h-7 w-7 place-items-center rounded-md text-muted-foreground transition-colors hover:bg-secondary hover:text-foreground"
+                    >
+                      <HugeiconsIcon icon={File01Icon} size={14} strokeWidth={1.75} />
+                    </a>
+                    <button
+                      type="button"
+                      onClick={() => router.push(`/pacientes/${patient.id}/orcamentos/${q.id}`)}
+                      aria-label="Editar"
+                      className="grid h-7 w-7 place-items-center rounded-md text-muted-foreground transition-colors hover:bg-secondary hover:text-foreground"
+                    >
+                      <HugeiconsIcon icon={PencilEdit01Icon} size={14} strokeWidth={1.75} />
+                    </button>
+                    <button
+                      type="button"
+                      disabled={isPending}
+                      onClick={() => handleDeleteQuote(q.id)}
+                      aria-label="Excluir"
+                      className="grid h-7 w-7 place-items-center rounded-md text-muted-foreground transition-colors hover:bg-secondary hover:text-destructive disabled:opacity-50"
+                    >
+                      <HugeiconsIcon icon={Delete02Icon} size={14} strokeWidth={1.75} />
+                    </button>
+                  </div>
+                </div>
+              ))
+            )}
+          </div>
+        </div>
       )}
 
       {tab === "receitas" && (
