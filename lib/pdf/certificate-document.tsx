@@ -1,8 +1,13 @@
-import { Document, Page, Text, View } from "@react-pdf/renderer";
 import type { ClinicProfile, MedicalCertificate, Patient } from "@prisma/client";
+import { Document, Page, StyleSheet, Text, View } from "@react-pdf/renderer";
+import "@/lib/pdf/fonts";
+import { brand } from "./brand";
 import { formatDate } from "./utils";
-import { PdfHeader, SignatureBox } from "./shared";
-import { pdfStyles } from "./styles";
+import { PdfHeader } from "./header";
+import { PatientBox } from "./patient-box";
+import { SignatureBox } from "./signature-box";
+import { PdfFooter } from "./footer";
+import { IconFolder, IconIdCard, IconUser } from "./icons";
 
 export function CertificateDocument({
   clinic,
@@ -13,25 +18,56 @@ export function CertificateDocument({
 }) {
   return (
     <Document>
-      <Page size="A4" style={pdfStyles.page}>
-        <PdfHeader clinic={clinic} title="ATESTADO ODONTOLÓGICO" />
-        <View style={{ marginTop: 40 }}>
-          <Text style={[pdfStyles.text, { fontSize: 18, lineHeight: 1.8 }]}>
-            Atesto, para fins trabalhistas, que o Sr(a). {certificate.patient.name} deverá
-            afastar-se de suas atividades laborais durante o período de {formatDate(certificate.absenceStartDate)}
-            {" "}a {formatDate(certificate.absenceEndDate)}.
+      <Page size="A4" style={s.page}>
+        <PdfHeader
+          title="ATESTADO ODONTOLÓGICO"
+          lines={[{ label: "Data:", value: formatDate(certificate.issueDate) }]}
+        />
+
+        <PatientBox
+          fields={[
+            { icon: <IconUser />, label: "Paciente:", value: certificate.patient.name },
+            { icon: <IconIdCard />, label: "CPF:", value: certificate.patient.cpf ?? "—" },
+            { icon: <IconFolder />, label: "Prontuário:", value: certificate.patient.recordNumber ?? "—" },
+          ]}
+        />
+
+        <View style={s.body}>
+          <Text style={s.paragraph}>
+            Atesto, para os devidos fins, que o(a) Sr(a). {certificate.patient.name} esteve sob meus
+            cuidados odontológicos e deverá afastar-se de suas atividades laborais no período de{" "}
+            {formatDate(certificate.absenceStartDate)} a {formatDate(certificate.absenceEndDate)}.
           </Text>
-          <Text style={[pdfStyles.text, { fontSize: 18, lineHeight: 1.8, marginTop: 24 }]}>
-            O mesmo encontra-se sob meus cuidados odontológicos.
-          </Text>
-          <Text style={[pdfStyles.text, { fontSize: 16, marginTop: 24 }]}>CID: {certificate.cid}</Text>
-          {certificate.notes && <Text style={[pdfStyles.text, { marginTop: 12 }]}>{certificate.notes}</Text>}
-          <Text style={[pdfStyles.text, { fontSize: 16, marginTop: 36 }]}>
+          <Text style={s.cid}>CID: {certificate.cid}</Text>
+          {certificate.notes ? <Text style={s.notes}>{certificate.notes}</Text> : null}
+          <Text style={s.place}>
             {certificate.city}, {formatDate(certificate.issueDate)}.
           </Text>
         </View>
-        <SignatureBox clinic={clinic} />
+
+        <View style={s.signWrap}>
+          <SignatureBox clinic={clinic} />
+        </View>
+
+        <PdfFooter clinic={clinic} />
       </Page>
     </Document>
   );
 }
+
+const s = StyleSheet.create({
+  page: {
+    paddingHorizontal: brand.page.paddingX,
+    paddingTop: brand.page.paddingTop,
+    paddingBottom: brand.page.paddingBottom,
+    fontFamily: brand.font,
+    color: brand.ink,
+    fontSize: 11,
+  },
+  body: { marginTop: 28 },
+  paragraph: { fontFamily: brand.font, fontSize: 12, lineHeight: 1.7, textAlign: "justify" },
+  cid: { fontFamily: brand.font, fontWeight: 600, fontSize: 12, color: brand.red, marginTop: 22 },
+  notes: { fontFamily: brand.font, fontSize: 11, color: brand.ink, marginTop: 12, lineHeight: 1.5 },
+  place: { fontFamily: brand.font, fontSize: 12, marginTop: 28 },
+  signWrap: { marginTop: 36 },
+});
