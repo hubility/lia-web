@@ -38,10 +38,10 @@ fuentes) es reproducible con sus primitivas (`View`, `Text`, `Image`, `Svg`, `Pa
   Mavignier" + "odontologia integrada"). En el encabezado se usa **solo la imagen**; **no** se
   vuelve a escribir `clinic.subtitle` como texto (evita duplicarlo). Se carga desde el filesystem en
   el server y se pasa a `<Image>`.
-- **Fuente Outfit:** se añaden los `.ttf` (Regular 400, Medium 500, SemiBold 600, Bold 700) a
-  `lib/pdf/fonts/` y se registran con `Font.register`. Es la fuente de marca (la app ya usa Outfit).
-  El wordmark script "Darcy Mavignier" vive dentro de la imagen del logo, así que no hace falta
-  registrar una fuente script.
+- **Fuente Outfit:** los `.ttf` estáticos ya están en `public/fonts/Outfit/static/` (se usan
+  Regular 400, Medium 500, SemiBold 600, Bold 700) y se registran con `Font.register`. Es la fuente
+  de marca (la app ya usa Outfit). El wordmark script "Darcy Mavignier" vive dentro de la imagen del
+  logo, así que no hace falta registrar una fuente script.
 
 ## Arquitectura de la capa PDF (`lib/pdf/`)
 
@@ -49,8 +49,8 @@ Sistema de piezas compartidas reutilizadas por los tres documentos:
 
 - **`brand.ts`** — tokens: rojo `#D32F2F`, gris marca `#9E9E9E`, grises de caja/borde, tinte rojo
   claro para la fila Total, tamaños y espaciados. Fuente `Outfit`.
-- **`fonts.ts`** — `Font.register` de Outfit (4 pesos) leyendo de `lib/pdf/fonts/`. Import con efecto
-  lateral desde cada documento.
+- **`fonts.ts`** — `Font.register` de Outfit (4 pesos) leyendo de `public/fonts/Outfit/static/`.
+  Import con efecto lateral desde cada documento.
 - **`icons.tsx`** — iconos de línea como `<Svg viewBox><Path/></Svg>` nativos de `@react-pdf`,
   parametrizados por `size` y `color` (stroke). Set necesario: `user`, `phone`, `idCard`, `folder`,
   `calendar`, `creditCard`, `chat`, `pin`, `globe`, `tooth`. Se extraen los `path` del set libre ya
@@ -64,7 +64,9 @@ Sistema de piezas compartidas reutilizadas por los tres documentos:
   + `clinic.cro` + línea de firma + "Assinatura".
 - **`footer.tsx`** — barra: línea roja superior + tres grupos `icono+texto` (teléfono, dirección,
   web) + tagline centrado en rojo. Renderiza con `position:absolute` + `fixed` (ver Paginación).
-- **`styles.ts`** — `StyleSheet` compartido derivado de `brand.ts`.
+- Cada pieza define su propio `StyleSheet` a partir de los tokens de `brand.ts` (estilos
+  co-localizados). Los antiguos `styles.ts` y `shared.tsx` quedan huérfanos tras la migración y se
+  eliminan.
 - **`quote-document.tsx`**, **`prescription-document.tsx`**, **`certificate-document.tsx`** — las
   tres plantillas que componen las piezas.
 - **`render.ts`**, **`utils.ts`** — se mantienen (buffer + `formatDate`/`formatBRL`). `utils.ts`
@@ -118,7 +120,9 @@ El número de ítems es indeterminado; el layout se controla así:
 - **Filas dinámicas:** una fila/ítem por registro real, sin relleno.
 - **`wrap={false}` por fila:** una fila nunca se parte entre dos páginas.
 - **Paginación automática:** `@react-pdf` continúa en la página siguiente cuando el contenido desborda.
-- **Cabecera de columnas de la tabla:** se repite arriba en cada página nueva (prop `fixed`).
+- **Cabecera de columnas:** se renderiza una vez al inicio de la tabla. En el raro caso de un
+  orçamento multipágina, las filas continúan en la página siguiente sin repetir la cabecera (evita el
+  solape que provocaría un `fixed` a media página).
 - **Footer independiente del contenido:** el `Page` reserva `paddingBottom` con la altura del pie; el
   componente de pie va `position:absolute` + `bottom` + `fixed`. Así:
   - Contenido corto → el pie queda anclado al fondo físico de la página (queda hueco en blanco encima).
@@ -128,8 +132,8 @@ El número de ítems es indeterminado; el layout se controla así:
 
 - Los tres endpoints `GET /api/pdf/{orcamentos,receitas,atestados}/[id]` devuelven un PDF válido
   (`content-type: application/pdf`) sin error de render.
-- **Orçamento** con 1 y con 15 líneas: 15 líneas paginan correctamente, la cabecera de columnas se
-  repite y el pie queda anclado abajo en todas las páginas; los círculos numerados son correlativos;
+- **Orçamento** con 1 y con 15 líneas: 15 líneas paginan correctamente (las filas no se parten) y el
+  pie queda anclado abajo en todas las páginas; los círculos numerados son correlativos;
   Subtotal/Desconto/Total cuadran.
 - **Receita** con múltiples ítems ordenados por `position`; Idade correcta (y "-" sin `birthDate`);
   el símbolo ℞ se renderiza.
