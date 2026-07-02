@@ -1,8 +1,13 @@
+import fs from "node:fs";
 import path from "node:path";
 import { Image, StyleSheet, Text, View } from "@react-pdf/renderer";
 import { brand } from "./brand";
 
-const logoPath = path.join(process.cwd(), "public", "logo", "logoDarcy.png");
+// Buffer en vez de ruta: react-pdf interpreta "C:\..." como URL con protocolo "c:" y no carga el archivo.
+const logoSrc = {
+  data: fs.readFileSync(path.join(process.cwd(), "public", "logo", "logoDarcy.png")),
+  format: "png" as const,
+};
 
 export function PdfHeader({
   title,
@@ -13,7 +18,7 @@ export function PdfHeader({
 }) {
   return (
     <View style={s.header}>
-      <Image src={logoPath} style={s.logo} />
+      <Image src={logoSrc} style={s.logo} />
       <View style={s.right}>
         <Text style={s.title}>{title}</Text>
         {lines.map((l) => (
