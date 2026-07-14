@@ -19,6 +19,7 @@ import {
   createPrescription,
   updatePrescription,
   deletePrescription,
+  type PrescriptionItemInput,
 } from "@/lib/modules/prescriptions/service";
 import {
   createCertificate,
@@ -94,7 +95,7 @@ export type SavePrescriptionInput = {
   patientId: string;
   issueDate: string;
   notes: string | null;
-  items: { medicine: string; instructions: string; position: number }[];
+  items: PrescriptionItemInput[];
 };
 
 export async function savePrescriptionAction(input: SavePrescriptionInput): Promise<string> {
@@ -124,7 +125,9 @@ export type SaveCertificateInput = {
   issueDate: string;
   absenceStartDate: string;
   absenceEndDate: string;
+  cidCodeId: string | null;
   cid: string;
+  cidDescription: string | null;
   city: string;
   notes: string | null;
 };
@@ -136,7 +139,9 @@ export async function saveCertificateAction(input: SaveCertificateInput): Promis
     issueDate: parseDate(input.issueDate),
     absenceStartDate: parseDate(input.absenceStartDate),
     absenceEndDate: parseDate(input.absenceEndDate),
+    cidCodeId: input.cidCodeId,
     cid: input.cid,
+    cidDescription: input.cidDescription,
     city: input.city,
     notes: input.notes,
   };

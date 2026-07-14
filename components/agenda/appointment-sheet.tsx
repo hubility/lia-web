@@ -19,8 +19,6 @@ import {
   updateAppointmentAction,
 } from "@/app/(dashboard)/agenda/actions";
 
-type Mode = "create" | "edit";
-
 interface BaseProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;

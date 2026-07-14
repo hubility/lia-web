@@ -43,6 +43,10 @@ export function Sidebar({ userRole }: SidebarProps) {
   const { theme, setTheme } = useTheme();
   const isDark = theme === "dark";
 
+  // Guard de hidratación de next-themes: el tema real solo se conoce en el cliente, así que
+  // el icono no puede decidirse en el servidor sin arriesgar un mismatch. Es el único sitio
+  // donde el setState en efecto es intencionado.
+  // eslint-disable-next-line react-hooks/set-state-in-effect
   useEffect(() => setMounted(true), []);
 
   const navItems: NavItem[] = [

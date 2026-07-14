@@ -18,6 +18,8 @@ export function PdfHeader({
 }) {
   return (
     <View style={s.header}>
+      {/* Image de @react-pdf, no <img> HTML: un PDF no tiene atributo alt. */}
+      {/* eslint-disable-next-line jsx-a11y/alt-text */}
       <Image src={logoSrc} style={s.logo} />
       <View style={s.right}>
         <Text style={s.title}>{title}</Text>

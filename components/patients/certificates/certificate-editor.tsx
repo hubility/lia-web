@@ -1,6 +1,7 @@
 "use client";
 
-import { useState, useTransition } from "react";
+import { useEffect, useMemo, useRef, useState, useTransition } from "react";
+import type { CidCode } from "@prisma/client";
 import { saveCertificateAction } from "@/app/(dashboard)/pacientes/[id]/actions";
 
 export type CertificateEditorPatient = {
@@ -16,7 +17,9 @@ export type CertificateEditorCertificate = {
   issueDate: Date;
   absenceStartDate: Date;
   absenceEndDate: Date;
+  cidCodeId: string | null;
   cid: string;
+  cidDescription: string | null;
   city: string;
   notes: string | null;
 };
@@ -28,11 +31,13 @@ const toDateInput = (d: Date) => d.toISOString().slice(0, 10);
 
 export function CertificateEditor({
   patient,
+  cidCodes,
   certificate,
   onCancel,
   onSaved,
 }: {
   patient: CertificateEditorPatient;
+  cidCodes: CidCode[];
   certificate?: CertificateEditorCertificate;
   onCancel: () => void;
   onSaved: () => void;
@@ -44,9 +49,40 @@ export function CertificateEditor({
   const [issueDate, setIssueDate] = useState(toDateInput(certificate?.issueDate ?? today));
   const [absenceStartDate, setAbsenceStartDate] = useState(toDateInput(certificate?.absenceStartDate ?? today));
   const [absenceEndDate, setAbsenceEndDate] = useState(toDateInput(certificate?.absenceEndDate ?? today));
+  const [cidCodeId, setCidCodeId] = useState(certificate?.cidCodeId ?? null);
   const [cid, setCid] = useState(certificate?.cid ?? "");
+  const [cidDescription, setCidDescription] = useState(certificate?.cidDescription ?? null);
   const [city, setCity] = useState(certificate?.city ?? "Fortaleza");
   const [notes, setNotes] = useState(certificate?.notes ?? "");
+
+  const [cidOpen, setCidOpen] = useState(false);
+  const cidRef = useRef<HTMLDivElement>(null);
+
+  const filteredCids = useMemo(() => {
+    const q = cid.trim().toLowerCase();
+    const matched = q
+      ? cidCodes.filter(
+          (c) => c.code.toLowerCase().includes(q) || c.description.toLowerCase().includes(q)
+        )
+      : cidCodes;
+    return matched.slice(0, 50);
+  }, [cidCodes, cid]);
+
+  useEffect(() => {
+    if (!cidOpen) return;
+    function onMouseDown(e: MouseEvent) {
+      if (!cidRef.current?.contains(e.target as Node)) setCidOpen(false);
+    }
+    document.addEventListener("mousedown", onMouseDown);
+    return () => document.removeEventListener("mousedown", onMouseDown);
+  }, [cidOpen]);
+
+  function pickCid(code: CidCode) {
+    setCidCodeId(code.id);
+    setCid(code.code);
+    setCidDescription(code.description);
+    setCidOpen(false);
+  }
 
   function handleSave() {
     if (!cid.trim()) {
@@ -70,7 +106,9 @@ export function CertificateEditor({
           issueDate,
           absenceStartDate,
           absenceEndDate,
+          cidCodeId,
           cid: cid.trim(),
+          cidDescription,
           city: city.trim(),
           notes: notes.trim() || null,
         });
@@ -122,10 +160,54 @@ export function CertificateEditor({
             className={inputClass}
           />
         </label>
-        <label className="flex flex-col gap-1">
+        <div className="relative flex flex-col gap-1" ref={cidRef}>
           <span className={labelClass}>CID</span>
-          <input value={cid} onChange={(e) => setCid(e.target.value)} placeholder="Ex.: J06" className={inputClass} />
-        </label>
+          {/* Teclear a mano rompe el vínculo con el catálogo: el código deja de ser el elegido. */}
+          <input
+            value={cid}
+            onChange={(e) => {
+              setCid(e.target.value);
+              setCidCodeId(null);
+              setCidDescription(null);
+              setCidOpen(true);
+            }}
+            onFocus={() => setCidOpen(true)}
+            placeholder="Buscar por código ou descrição"
+            className={inputClass}
+          />
+          {cidDescription && !cidOpen && (
+            <span className="truncate text-xs text-muted-foreground">{cidDescription}</span>
+          )}
+
+          {cidOpen && (
+            <div className="absolute left-0 right-0 top-full z-10 mt-1 rounded-md border bg-popover p-1.5 shadow-md">
+              {filteredCids.length === 0 ? (
+                <p className="px-2 py-2 font-mono text-xs text-muted-foreground">
+                  Nenhum CID no catálogo.
+                </p>
+              ) : (
+                <ul className="max-h-56 overflow-y-auto">
+                  {filteredCids.map((code) => (
+                    <li key={code.id}>
+                      <button
+                        type="button"
+                        onClick={() => pickCid(code)}
+                        className="flex w-full items-baseline gap-2 rounded-sm px-1.5 py-2 text-left transition-colors hover:bg-secondary"
+                      >
+                        <span className="shrink-0 font-mono text-xs font-semibold tabular-nums text-foreground">
+                          {code.code}
+                        </span>
+                        <span className="truncate text-sm text-muted-foreground">
+                          {code.description}
+                        </span>
+                      </button>
+                    </li>
+                  ))}
+                </ul>
+              )}
+            </div>
+          )}
+        </div>
         <label className="flex flex-col gap-1">
           <span className={labelClass}>Cidade</span>
           <input value={city} onChange={(e) => setCity(e.target.value)} className={inputClass} />

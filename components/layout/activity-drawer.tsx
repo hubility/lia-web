@@ -59,22 +59,23 @@ export function ActivityDrawer({ open, onOpenChange }: Props) {
   // Spec §7.6: "el indicador visual persiste hasta cerrar el drawer".
   const [unseenSnapshot, setUnseenSnapshot] = useState<Set<string> | null>(null);
 
-  // Capture the snapshot on first arrival of data per open cycle, then mark as seen.
-  useEffect(() => {
-    if (!open) return;
-    if (unseenSnapshot !== null) return;
-    if (!query.data) return;
+  // Ajuste de estado durante el render (patrón de React para derivar estado de props):
+  // captura el snapshot en cuanto llegan los datos del ciclo de apertura, y lo suelta al
+  // cerrar para que la próxima apertura lo recapture. Ambas condiciones dejan de cumplirse
+  // tras actualizar, así que no hay bucle. Hacerlo en un efecto encadenaba un render extra.
+  if (open && unseenSnapshot === null && query.data) {
+    setUnseenSnapshot(new Set(query.data.filter((e) => !e.seen).map((e) => e.id)));
+  }
+  if (!open && unseenSnapshot !== null) {
+    setUnseenSnapshot(null);
+  }
 
-    const ids = new Set(query.data.filter((e) => !e.seen).map((e) => e.id));
-    setUnseenSnapshot(ids);
-    markSeen.mutate();
+  // Marcar como vistos en el servidor sí es un efecto: se dispara una vez por apertura,
+  // cuando el snapshot acaba de capturarse.
+  useEffect(() => {
+    if (open && unseenSnapshot !== null) markSeen.mutate();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [open, query.data]);
-
-  // Reset the snapshot when the drawer closes so the next open captures fresh state.
-  useEffect(() => {
-    if (!open) setUnseenSnapshot(null);
-  }, [open]);
+  }, [open, unseenSnapshot]);
 
   // Decorate events with a local `seen` derived from the snapshot.
   const decoratedEvents = useMemo<ActivityEvent[]>(() => {

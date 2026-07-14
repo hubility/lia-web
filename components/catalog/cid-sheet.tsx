@@ -1,8 +1,7 @@
 "use client";
 
 import { useState, useTransition, type ReactNode } from "react";
-import { useRouter } from "next/navigation";
-import type { Patient } from "@prisma/client";
+import type { CidCode } from "@prisma/client";
 import {
   Sheet,
   SheetContent,
@@ -12,10 +11,11 @@ import {
   SheetTitle,
 } from "@/components/ui/sheet";
 import {
-  createPatientAction,
-  deletePatientAction,
-  updatePatientAction,
-} from "@/app/(dashboard)/pacientes/actions";
+  createCidAction,
+  deleteCidAction,
+  toggleCidAction,
+  updateCidAction,
+} from "@/app/(dashboard)/catalogo/actions";
 
 interface BaseProps {
   open: boolean;
@@ -26,16 +26,15 @@ interface CreateProps extends BaseProps {
 }
 interface EditProps extends BaseProps {
   mode: "edit";
-  patient: Patient;
+  item: CidCode;
 }
 type Props = CreateProps | EditProps;
 
 const inputClass = "w-full rounded-md border border-input bg-background px-3 py-2 text-sm";
 
-export function PatientSheet(props: Props) {
+export function CidSheet(props: Props) {
   const { open, onOpenChange, mode } = props;
-  const patient = mode === "edit" ? props.patient : null;
-  const router = useRouter();
+  const item = mode === "edit" ? props.item : null;
   const [isPending, startTransition] = useTransition();
   const [error, setError] = useState<string | null>(null);
 
@@ -49,29 +48,39 @@ export function PatientSheet(props: Props) {
     setError(null);
     startTransition(async () => {
       try {
-        if (mode === "edit" && patient) {
-          await updatePatientAction(patient.id, formData);
-          onOpenChange(false);
+        if (mode === "edit" && item) {
+          await updateCidAction(item.id, formData);
         } else {
-          const id = await createPatientAction(formData);
-          onOpenChange(false);
-          router.push(`/pacientes/${id}`);
+          await createCidAction(formData);
         }
+        onOpenChange(false);
       } catch (e) {
         setError(e instanceof Error ? e.message : "Erro ao salvar");
       }
     });
   }
 
-  function handleDelete() {
-    if (!patient) return;
-    if (!confirm("Excluir paciente?")) return;
+  function handleToggle() {
+    if (!item) return;
     setError(null);
     startTransition(async () => {
       try {
-        await deletePatientAction(patient.id);
+        await toggleCidAction(item.id, !item.isActive);
         onOpenChange(false);
-        router.push("/pacientes");
+      } catch (e) {
+        setError(e instanceof Error ? e.message : "Erro");
+      }
+    });
+  }
+
+  function handleDelete() {
+    if (!item) return;
+    if (!confirm("Excluir CID?")) return;
+    setError(null);
+    startTransition(async () => {
+      try {
+        await deleteCidAction(item.id);
+        onOpenChange(false);
       } catch (e) {
         setError(e instanceof Error ? e.message : "Erro");
       }
@@ -82,44 +91,33 @@ export function PatientSheet(props: Props) {
     <Sheet open={open} onOpenChange={changeOpen}>
       <SheetContent className="flex w-full flex-col gap-0 sm:max-w-md">
         <SheetHeader className="border-b">
-          <SheetTitle>{mode === "edit" ? "Editar paciente" : "Novo paciente"}</SheetTitle>
+          <SheetTitle>{mode === "edit" ? "Editar CID" : "Novo CID"}</SheetTitle>
           <SheetDescription>
             {mode === "edit"
-              ? "Atualize os dados cadastrais do paciente."
-              : "Cadastre os dados básicos do paciente."}
+              ? "Atualize o código ou a descrição."
+              : "Cadastre um código CID no catálogo."}
           </SheetDescription>
         </SheetHeader>
 
         <form action={handleSubmit} className="flex flex-1 flex-col gap-4 overflow-y-auto p-4">
-          <Field label="Nome">
-            <input name="name" required defaultValue={patient?.name ?? ""} className={inputClass} />
+          <Field label="Código">
+            <input
+              name="code"
+              required
+              defaultValue={item?.code ?? ""}
+              placeholder="Ex.: K04.0"
+              className={`${inputClass} font-mono uppercase`}
+            />
           </Field>
-          <Field label="Telefone">
-            <input name="phone" required defaultValue={patient?.phone ?? ""} className={inputClass} />
-          </Field>
-          <div className="grid grid-cols-2 gap-3">
-            <Field label="Email">
-              <input name="email" type="email" defaultValue={patient?.email ?? ""} className={inputClass} />
-            </Field>
-            <Field label="CPF">
-              <input name="cpf" defaultValue={patient?.cpf ?? ""} className={inputClass} />
-            </Field>
-          </div>
-          <div className="grid grid-cols-2 gap-3">
-            <Field label="Nascimento">
-              <input
-                name="birthDate"
-                type="date"
-                defaultValue={patient?.birthDate?.toISOString().slice(0, 10) ?? ""}
-                className={inputClass}
-              />
-            </Field>
-            <Field label="Prontuário">
-              <input name="recordNumber" defaultValue={patient?.recordNumber ?? ""} className={inputClass} />
-            </Field>
-          </div>
-          <Field label="Observações">
-            <textarea name="notes" rows={3} defaultValue={patient?.notes ?? ""} className={inputClass} />
+          <Field label="Descrição">
+            <textarea
+              name="description"
+              required
+              rows={3}
+              defaultValue={item?.description ?? ""}
+              placeholder="Ex.: Pulpite"
+              className={inputClass}
+            />
           </Field>
 
           {error && (
@@ -131,14 +129,24 @@ export function PatientSheet(props: Props) {
           <SheetFooter className="-mx-4 -mb-4 mt-auto border-t p-4">
             <div className="flex w-full items-center justify-between gap-2">
               {mode === "edit" ? (
-                <button
-                  type="button"
-                  onClick={handleDelete}
-                  disabled={isPending}
-                  className="rounded-md border border-destructive/40 px-3 py-2 text-sm font-medium text-destructive transition-colors hover:bg-destructive/10"
-                >
-                  Excluir
-                </button>
+                <div className="flex items-center gap-2">
+                  <button
+                    type="button"
+                    onClick={handleToggle}
+                    disabled={isPending}
+                    className="rounded-md px-3 py-2 text-sm font-medium text-muted-foreground transition-colors hover:text-foreground disabled:opacity-50"
+                  >
+                    {item?.isActive ? "Inativar" : "Ativar"}
+                  </button>
+                  <button
+                    type="button"
+                    onClick={handleDelete}
+                    disabled={isPending}
+                    className="rounded-md border border-destructive/40 px-3 py-2 text-sm font-medium text-destructive transition-colors hover:bg-destructive/10 disabled:opacity-50"
+                  >
+                    Excluir
+                  </button>
+                </div>
               ) : (
                 <span />
               )}

@@ -10,10 +10,7 @@ import { cn } from "@/lib/utils";
 import {
   type AgendaView,
   addDays,
-  endOfWeek,
   formatIsoDate,
-  startOfMonth,
-  endOfMonth,
   startOfWeek,
 } from "@/lib/agenda/range";
 import { AppointmentSheet } from "@/components/agenda/appointment-sheet";

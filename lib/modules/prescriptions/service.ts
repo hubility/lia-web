@@ -1,10 +1,17 @@
 import { prisma } from "@/lib/db/prisma";
 
+export type PrescriptionItemInput = {
+  medicationId?: string | null;
+  medicine: string;
+  instructions: string;
+  position: number;
+};
+
 export type PrescriptionInput = {
   patientId: string;
   issueDate: Date;
   notes?: string | null;
-  items: { medicine: string; instructions: string; position: number }[];
+  items: PrescriptionItemInput[];
 };
 
 export async function listPrescriptions() {

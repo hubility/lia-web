@@ -12,7 +12,21 @@ const eslintConfig = defineConfig([
     "out/**",
     "build/**",
     "next-env.d.ts",
+    // Copias del repo en worktrees aislados: no son fuente del proyecto.
+    ".worktrees/**",
+    // Utillaje y bundles de terceros del harness, no código de la app.
+    ".claude/**",
   ]),
+  {
+    rules: {
+      // El prefijo _ es la convención para "declarado a propósito, no usado" (p. ej. un
+      // parámetro que la firma exige pero el cuerpo aún no consume).
+      "@typescript-eslint/no-unused-vars": [
+        "warn",
+        { argsIgnorePattern: "^_", varsIgnorePattern: "^_", caughtErrorsIgnorePattern: "^_" },
+      ],
+    },
+  },
 ]);
 
 export default eslintConfig;

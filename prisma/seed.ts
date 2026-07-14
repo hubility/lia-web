@@ -3,6 +3,7 @@ import { hashPassword } from "../lib/auth/passwords";
 import { createOpaqueToken, hashToken } from "../lib/auth/tokens";
 import { existsSync, readFileSync } from "node:fs";
 import { resolve } from "node:path";
+import cid10Odonto from "./data/cid10-odonto.json";
 
 const envPath = resolve(process.cwd(), ".env");
 
@@ -133,6 +134,17 @@ async function main() {
     await prisma.catalogItem.create({
       data: item,
     });
+  }
+
+  // CID-10 odontológico (K00–K14), de la tabla del DATASUS. Solo inserta lo que falta:
+  // una descripción corregida o un código desactivado por el doctor no se pisan nunca.
+  const created = await prisma.cidCode.createMany({
+    data: cid10Odonto,
+    skipDuplicates: true,
+  });
+
+  if (created.count > 0) {
+    console.log(`Seed CID-10 odontológico: ${created.count} códigos novos`);
   }
 
   const apiKeyName = process.env.SEED_API_KEY_NAME ?? "lia-agent-local";

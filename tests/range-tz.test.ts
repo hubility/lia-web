@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { parseAgendaDate, startOfWeek, endOfWeek, startOfDay, endOfDay, rangeFor, isSameDay } from "../lib/agenda/range";
+import { parseAgendaDate, startOfWeek, rangeFor, isSameDay } from "../lib/agenda/range";
 import { parseDateTime, parseDate } from "../lib/dates";
 
 // Estos tests corren con TZ=UTC (config de Vitest) para simular Vercel.

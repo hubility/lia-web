@@ -5,7 +5,9 @@ export type CertificateInput = {
   issueDate: Date;
   absenceStartDate: Date;
   absenceEndDate: Date;
+  cidCodeId?: string | null;
   cid: string;
+  cidDescription?: string | null;
   city: string;
   notes?: string | null;
 };
@@ -35,7 +37,9 @@ export async function updateCertificate(id: string, input: CertificateInput) {
       issueDate: input.issueDate,
       absenceStartDate: input.absenceStartDate,
       absenceEndDate: input.absenceEndDate,
+      cidCodeId: input.cidCodeId,
       cid: input.cid,
+      cidDescription: input.cidDescription,
       city: input.city,
       notes: input.notes,
     },

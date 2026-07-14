@@ -8,13 +8,7 @@ import { PatientBox } from "@/lib/pdf/patient-box";
 import { SignatureBox } from "@/lib/pdf/signature-box";
 import { PdfFooter } from "@/lib/pdf/footer";
 import { IconUser } from "@/lib/pdf/icons";
-
-const clinic = {
-  id: "default", name: "Dr. Darcy Mavignier", subtitle: "odontologia integrada",
-  specialty: "Cirurgião-Dentista", cro: "CRO-CE 4157", phone: "(85) 99999-9999",
-  address: "Rua das Flores, 123 - Centro", cityLine: "Fortaleza - CE - CEP 60000-000",
-  website: "www.darcymavignier.com.br", createdAt: new Date(), updatedAt: new Date(),
-} as any;
+import { clinic } from "./fixtures";
 
 describe("pdf chrome", () => {
   it("renderiza header + patient box + signature + footer", async () => {

@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, useTransition, type ReactNode } from "react";
+import { useState, useTransition, type ReactNode } from "react";
 import type { CatalogItem } from "@prisma/client";
 import {
   Sheet,
@@ -16,8 +16,6 @@ import {
   toggleCatalogAction,
   updateCatalogAction,
 } from "@/app/(dashboard)/catalogo/actions";
-
-type Mode = "create" | "edit";
 
 interface BaseProps {
   open: boolean;
@@ -40,9 +38,11 @@ export function CatalogSheet(props: Props) {
   const [isPending, startTransition] = useTransition();
   const [error, setError] = useState<string | null>(null);
 
-  useEffect(() => {
-    if (open) setError(null);
-  }, [open]);
+  /** Al cerrar se limpia el error, para que no reaparezca en la próxima apertura. */
+  function changeOpen(next: boolean) {
+    if (!next) setError(null);
+    onOpenChange(next);
+  }
 
   function handleSubmit(formData: FormData) {
     setError(null);
@@ -88,7 +88,7 @@ export function CatalogSheet(props: Props) {
   }
 
   return (
-    <Sheet open={open} onOpenChange={onOpenChange}>
+    <Sheet open={open} onOpenChange={changeOpen}>
       <SheetContent className="flex w-full flex-col gap-0 sm:max-w-md">
         <SheetHeader className="border-b">
           <SheetTitle>{mode === "edit" ? "Editar procedimento" : "Novo procedimento"}</SheetTitle>
@@ -167,7 +167,7 @@ export function CatalogSheet(props: Props) {
               <div className="flex items-center gap-2">
                 <button
                   type="button"
-                  onClick={() => onOpenChange(false)}
+                  onClick={() => changeOpen(false)}
                   className="rounded-md px-3 py-2 text-sm text-muted-foreground transition-colors hover:text-foreground"
                 >
                   Cancelar

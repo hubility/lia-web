@@ -38,7 +38,11 @@ export function CertificateDocument({
             cuidados odontológicos e deverá afastar-se de suas atividades laborais no período de{" "}
             {formatDate(certificate.absenceStartDate)} a {formatDate(certificate.absenceEndDate)}.
           </Text>
-          <Text style={s.cid}>CID: {certificate.cid}</Text>
+          {/* Los atestados emitidos antes del catálogo no tienen descripción: solo el código. */}
+          <Text style={s.cid}>
+            CID: {certificate.cid}
+            {certificate.cidDescription ? ` — ${certificate.cidDescription}` : ""}
+          </Text>
           {certificate.notes ? <Text style={s.notes}>{certificate.notes}</Text> : null}
           <Text style={s.place}>
             {certificate.city}, {formatDate(certificate.issueDate)}.

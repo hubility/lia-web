@@ -1,8 +1,9 @@
 "use client";
 
-import { useState, useTransition } from "react";
+import { useMemo, useState, useTransition } from "react";
 import { HugeiconsIcon } from "@hugeicons/react";
-import { PlusSignIcon, Cancel01Icon } from "@hugeicons/core-free-icons";
+import { PlusSignIcon, Cancel01Icon, Search01Icon } from "@hugeicons/core-free-icons";
+import type { Medication } from "@prisma/client";
 import { savePrescriptionAction } from "@/app/(dashboard)/pacientes/[id]/actions";
 
 export type PrescriptionEditorPatient = {
@@ -17,10 +18,15 @@ export type PrescriptionEditorPrescription = {
   id: string;
   issueDate: Date;
   notes: string | null;
-  items: { medicine: string; instructions: string }[];
+  items: { medicationId: string | null; medicine: string; instructions: string }[];
 };
 
-type EditorItem = { key: string; medicine: string; instructions: string };
+type EditorItem = {
+  key: string;
+  medicationId: string | null;
+  medicine: string;
+  instructions: string;
+};
 
 let keySeq = 0;
 const nextKey = () => `i${keySeq++}`;
@@ -28,20 +34,26 @@ const nextKey = () => `i${keySeq++}`;
 const inputClass = "w-full rounded-md border border-input bg-background px-2.5 py-1.5 text-sm";
 const labelClass = "font-mono text-[11px] font-semibold uppercase tracking-wider text-muted-foreground";
 
+function emptyItem(): EditorItem {
+  return { key: nextKey(), medicationId: null, medicine: "", instructions: "" };
+}
+
 function toEditorItems(prescription?: PrescriptionEditorPrescription): EditorItem[] {
   if (!prescription || prescription.items.length === 0) {
-    return [{ key: nextKey(), medicine: "", instructions: "" }];
+    return [emptyItem()];
   }
   return prescription.items.map((i) => ({ key: nextKey(), ...i }));
 }
 
 export function PrescriptionEditor({
   patient,
+  medications,
   prescription,
   onCancel,
   onSaved,
 }: {
   patient: PrescriptionEditorPatient;
+  medications: Medication[];
   prescription?: PrescriptionEditorPrescription;
   onCancel: () => void;
   onSaved: () => void;
@@ -54,6 +66,13 @@ export function PrescriptionEditor({
   );
   const [items, setItems] = useState<EditorItem[]>(() => toEditorItems(prescription));
   const [notes, setNotes] = useState(prescription?.notes ?? "");
+  const [picking, setPicking] = useState(false);
+  const [search, setSearch] = useState("");
+
+  const filteredMedications = useMemo(
+    () => medications.filter((m) => m.name.toLowerCase().includes(search.toLowerCase())),
+    [medications, search]
+  );
 
   function updateItem(key: string, patch: Partial<EditorItem>) {
     setItems((prev) => prev.map((i) => (i.key === key ? { ...i, ...patch } : i)));
@@ -62,12 +81,29 @@ export function PrescriptionEditor({
     setItems((prev) => prev.filter((i) => i.key !== key));
   }
   function addItem() {
-    setItems((prev) => [...prev, { key: nextKey(), medicine: "", instructions: "" }]);
+    setItems((prev) => [...prev, emptyItem()]);
+  }
+  function addFromCatalog(medication: Medication) {
+    setItems((prev) => [
+      ...prev,
+      {
+        key: nextKey(),
+        medicationId: medication.id,
+        medicine: medication.name,
+        instructions: medication.defaultPosology,
+      },
+    ]);
+    setPicking(false);
+    setSearch("");
   }
 
   function handleSave() {
     const normalized = items
-      .map((i) => ({ medicine: i.medicine.trim(), instructions: i.instructions.trim() }))
+      .map((i) => ({
+        medicationId: i.medicationId,
+        medicine: i.medicine.trim(),
+        instructions: i.instructions.trim(),
+      }))
       .filter((i) => i.medicine.length > 0)
       .map((i, position) => ({ ...i, position }));
     if (normalized.length === 0) {
@@ -121,9 +157,13 @@ export function PrescriptionEditor({
         </div>
         {items.map((item) => (
           <div key={item.key} className="grid grid-cols-[1fr_1.5fr_2rem] items-center gap-2 border-b px-3 py-2 last:border-b-0">
+            {/* Cambiar el nombre rompe el vínculo con el catálogo: ya es otro medicamento.
+                Ajustar la posología al paciente NO lo rompe: es el uso normal de una receita. */}
             <input
               value={item.medicine}
-              onChange={(e) => updateItem(item.key, { medicine: e.target.value })}
+              onChange={(e) =>
+                updateItem(item.key, { medicine: e.target.value, medicationId: null })
+              }
               placeholder="Nome do medicamento"
               className={inputClass}
             />
@@ -144,15 +184,58 @@ export function PrescriptionEditor({
           </div>
         ))}
 
-        <div className="flex items-center gap-2 p-2">
+        <div className="relative flex items-center gap-2 p-2">
           <button
             type="button"
-            onClick={addItem}
+            onClick={() => setPicking((v) => !v)}
             className="inline-flex h-8 items-center gap-1 rounded-md bg-secondary px-2.5 text-xs font-semibold text-secondary-foreground transition-colors hover:bg-secondary/70"
           >
             <HugeiconsIcon icon={PlusSignIcon} size={13} strokeWidth={2} />
-            Adicionar medicamento
+            Do catálogo
           </button>
+          <button
+            type="button"
+            onClick={addItem}
+            className="inline-flex h-8 items-center gap-1 rounded-md px-2.5 text-xs font-semibold text-muted-foreground transition-colors hover:text-foreground"
+          >
+            <HugeiconsIcon icon={PlusSignIcon} size={13} strokeWidth={2} />
+            Medicamento livre
+          </button>
+
+          {picking && (
+            <div className="absolute left-2 top-12 z-10 w-96 rounded-md border bg-popover p-1.5 shadow-md">
+              <div className="mb-1 flex items-center gap-1.5 rounded-md border px-2">
+                <HugeiconsIcon icon={Search01Icon} size={14} strokeWidth={1.75} className="text-muted-foreground" />
+                <input
+                  autoFocus
+                  value={search}
+                  onChange={(e) => setSearch(e.target.value)}
+                  placeholder="Buscar medicamento"
+                  className="w-full bg-transparent py-1.5 text-sm outline-none"
+                />
+              </div>
+              {filteredMedications.length === 0 ? (
+                <p className="px-2 py-2 font-mono text-xs text-muted-foreground">Nenhum item.</p>
+              ) : (
+                <ul className="max-h-56 overflow-y-auto">
+                  {filteredMedications.map((medication) => (
+                    <li key={medication.id}>
+                      <button
+                        type="button"
+                        onClick={() => addFromCatalog(medication)}
+                        className="flex w-full flex-col gap-0.5 rounded-sm px-1.5 py-2 text-left transition-colors hover:bg-secondary"
+                      >
+                        <span className="truncate text-sm text-foreground">{medication.name}</span>
+                        <span className="truncate text-xs text-muted-foreground">
+                          {medication.defaultPosology}
+                        </span>
+                      </button>
+                    </li>
+                  ))}
+                </ul>
+              )}
+            </div>
+          )}
         </div>
       </section>
 

@@ -11,7 +11,7 @@ import { cn } from "@/lib/utils";
 import { formatDate, formatDateTime } from "@/lib/dates";
 import { formatBRL } from "@/lib/money";
 import { calculateAge, quoteValueCents } from "@/lib/patients/derive";
-import type { CatalogItem } from "@prisma/client";
+import type { CatalogItem, CidCode, Medication } from "@prisma/client";
 import type { PatientDetailData } from "@/lib/modules/patients/service";
 import { PatientSheet } from "@/components/patients/patient-sheet";
 import { OdontogramTab } from "@/components/patients/odontogram/odontogram-tab";
@@ -44,7 +44,17 @@ function onlyDigits(phone: string): string {
   return phone.replace(/\D/g, "");
 }
 
-export function PatientDetail({ patient, catalog }: { patient: PatientDetailData; catalog: CatalogItem[] }) {
+export function PatientDetail({
+  patient,
+  catalog,
+  medications,
+  cidCodes,
+}: {
+  patient: PatientDetailData;
+  catalog: CatalogItem[];
+  medications: Medication[];
+  cidCodes: CidCode[];
+}) {
   const [tab, setTab] = useState<Tab>("odontograma");
   const [editOpen, setEditOpen] = useState(false);
   const router = useRouter();
@@ -269,6 +279,7 @@ export function PatientDetail({ patient, catalog }: { patient: PatientDetailData
         editingPrescription !== null ? (
           <PrescriptionEditor
             patient={{ id: patient.id, name: patient.name, phone: patient.phone, cpf: patient.cpf, recordNumber: patient.recordNumber }}
+            medications={medications}
             prescription={editingPrescription === "new" ? undefined : editingPrescription}
             onCancel={() => setEditingPrescription(null)}
             onSaved={() => {
@@ -335,7 +346,11 @@ export function PatientDetail({ patient, catalog }: { patient: PatientDetailData
                             id: p.id,
                             issueDate: p.issueDate,
                             notes: p.notes,
-                            items: p.items.map((i) => ({ medicine: i.medicine, instructions: i.instructions })),
+                            items: p.items.map((i) => ({
+                              medicationId: i.medicationId,
+                              medicine: i.medicine,
+                              instructions: i.instructions,
+                            })),
                           })
                         }
                         aria-label="Editar"
@@ -365,6 +380,7 @@ export function PatientDetail({ patient, catalog }: { patient: PatientDetailData
         editingCertificate !== null ? (
           <CertificateEditor
             patient={{ id: patient.id, name: patient.name, phone: patient.phone, cpf: patient.cpf, recordNumber: patient.recordNumber }}
+            cidCodes={cidCodes}
             certificate={editingCertificate === "new" ? undefined : editingCertificate}
             onCancel={() => setEditingCertificate(null)}
             onSaved={() => {
@@ -432,7 +448,9 @@ export function PatientDetail({ patient, catalog }: { patient: PatientDetailData
                             issueDate: c.issueDate,
                             absenceStartDate: c.absenceStartDate,
                             absenceEndDate: c.absenceEndDate,
+                            cidCodeId: c.cidCodeId,
                             cid: c.cid,
+                            cidDescription: c.cidDescription,
                             city: c.city,
                             notes: c.notes,
                           })

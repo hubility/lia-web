@@ -107,6 +107,26 @@ model CatalogItem {
   updatedAt       DateTime      @updatedAt
 }
 
+model Medication {
+  id              String             @id @default(cuid())
+  name            String
+  defaultPosology String
+  isActive        Boolean            @default(true)
+  prescriptionItems PrescriptionItem[]
+  createdAt       DateTime           @default(now())
+  updatedAt       DateTime           @updatedAt
+}
+
+model CidCode {
+  id           String               @id @default(cuid())
+  code         String               @unique
+  description  String
+  isActive     Boolean              @default(true)
+  certificates MedicalCertificate[]
+  createdAt    DateTime             @default(now())
+  updatedAt    DateTime             @updatedAt
+}
+
 model TimeBlock {
   id        String        @id @default(cuid())
   label     String
@@ -175,10 +195,12 @@ model Prescription {
 model PrescriptionItem {
   id             String       @id @default(cuid())
   prescriptionId String
+  medicationId   String?
   medicine       String
   instructions   String
   position       Int
   prescription   Prescription @relation(fields: [prescriptionId], references: [id], onDelete: Cascade)
+  medication     Medication?  @relation(fields: [medicationId], references: [id], onDelete: SetNull)
 }
 
 model MedicalCertificate {
@@ -187,10 +209,13 @@ model MedicalCertificate {
   issueDate        DateTime
   absenceStartDate DateTime
   absenceEndDate   DateTime
+  cidCodeId        String?
   cid              String
+  cidDescription   String?
   city             String
   notes            String?
   patient          Patient  @relation(fields: [patientId], references: [id], onDelete: Cascade)
+  cidCode          CidCode? @relation(fields: [cidCodeId], references: [id], onDelete: SetNull)
   createdAt        DateTime @default(now())
   updatedAt        DateTime @updatedAt
 }
