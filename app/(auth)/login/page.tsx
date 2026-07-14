@@ -1,12 +1,23 @@
+import Image from "next/image";
 import { LoginForm } from "./login-form";
 
 export default function LoginPage() {
   return (
-    <main className="flex min-h-screen items-center justify-center bg-zinc-50 px-6">
-      <section className="w-full max-w-sm rounded-lg border border-zinc-200 bg-white p-8 shadow-sm">
-        <div className="mb-8">
-          <p className="text-sm font-medium text-zinc-500">Lia</p>
-          <h1 className="mt-1 text-2xl font-semibold text-zinc-950">Painel Dr. Darcy</h1>
+    <main className="grid min-h-screen place-items-center bg-background px-6">
+      <section className="w-full max-w-[380px] rounded-md border bg-card p-8 shadow-sm">
+        <div className="mb-7">
+          <Image
+            src="/logo/logoDarcy.png"
+            alt="Dr. Darcy Mavignier — odontologia integrada"
+            width={600}
+            height={215}
+            priority
+            className="h-auto w-44"
+          />
+          <p className="mt-6 font-mono text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
+            Acesso
+          </p>
+          <h1 className="mt-1 text-xl font-semibold text-foreground">Painel clínico</h1>
         </div>
         <LoginForm />
       </section>
