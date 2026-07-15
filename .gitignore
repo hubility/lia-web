@@ -49,3 +49,5 @@ next-env.d.ts
 
 # local Claude Code config and tooling
 .claude/
+.agents/
+.codex/
