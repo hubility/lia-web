@@ -104,6 +104,8 @@ async function main() {
       address: process.env.CLINIC_ADDRESS ?? "Rua das Flores, 123 - Centro",
       cityLine: process.env.CLINIC_CITY_LINE ?? "Cidade - UF - CEP 00000-000",
       website: process.env.CLINIC_WEBSITE ?? "www.darcymavignier.com.br",
+      opensAtMinutes: 8 * 60,
+      closesAtMinutes: 19 * 60,
     },
     create: {
       id: "default",
@@ -115,6 +117,8 @@ async function main() {
       address: process.env.CLINIC_ADDRESS ?? "Rua das Flores, 123 - Centro",
       cityLine: process.env.CLINIC_CITY_LINE ?? "Cidade - UF - CEP 00000-000",
       website: process.env.CLINIC_WEBSITE ?? "www.darcymavignier.com.br",
+      opensAtMinutes: 8 * 60,
+      closesAtMinutes: 19 * 60,
     },
   });
 

@@ -10,6 +10,8 @@ export const clinic: ClinicProfile = {
   address: "Rua das Flores, 123 - Centro",
   cityLine: "Fortaleza - CE - CEP 60000-000",
   website: "www.darcymavignier.com.br",
+  opensAtMinutes: 8 * 60,
+  closesAtMinutes: 19 * 60,
   createdAt: new Date("2026-01-01"),
   updatedAt: new Date("2026-01-01"),
 };

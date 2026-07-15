@@ -2,6 +2,7 @@ export type Role = "admin" | "dentist" | "assistant";
 export type Action = "create" | "read" | "update" | "delete";
 export type Resource =
   | "users"
+  | "settings"
   | "catalog"
   | "patients"
   | "appointments"

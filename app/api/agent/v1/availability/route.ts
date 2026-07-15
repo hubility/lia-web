@@ -5,6 +5,7 @@ import { findFreeSlots } from "@/lib/agenda/availability";
 import { listAppointments } from "@/lib/modules/appointments/service";
 import { listTimeBlocks } from "@/lib/modules/timeblocks/service";
 import { getCatalogItem } from "@/lib/modules/catalog/service";
+import { getClinicSchedule } from "@/lib/clinic/schedule";
 
 const querySchema = z.object({
   from: z.string().datetime({ offset: true }),
@@ -32,9 +33,10 @@ export async function GET(request: Request) {
     const item = await getCatalogItem(parsed.data.catalogItemId);
     if (!item) return jsonError(404, "Serviço não encontrado.");
 
-    const [appointments, timeBlocks] = await Promise.all([
+    const [appointments, timeBlocks, schedule] = await Promise.all([
       listAppointments(from, to),
       listTimeBlocks(from, to),
+      getClinicSchedule(),
     ]);
 
     const slots = findFreeSlots({
@@ -43,6 +45,7 @@ export async function GET(request: Request) {
       durationMinutes: item.durationMinutes,
       appointments,
       timeBlocks,
+      schedule,
     });
 
     return jsonOk({

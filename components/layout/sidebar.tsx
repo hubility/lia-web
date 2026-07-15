@@ -13,6 +13,7 @@ import {
   SidebarLeft01Icon,
   Sun02Icon,
   Moon02Icon,
+  Settings01Icon,
 } from "@hugeicons/core-free-icons";
 import {
   Tooltip,
@@ -54,6 +55,7 @@ export function Sidebar({ userRole }: SidebarProps) {
     { label: "Pacientes", href: "/pacientes", icon: UserMultiple02Icon, resource: "patients" },
     { label: "Catálogo", href: "/catalogo", icon: DentalToothIcon, resource: "catalog" },
     { label: "Usuários", href: "/usuarios", icon: UserSettings01Icon, resource: "users" },
+    { label: "Configurações", href: "/configuracoes", icon: Settings01Icon, resource: "settings" },
   ];
 
   const visibleNav = navItems.filter((item) => canAccessResource(userRole, item.resource, "read"));

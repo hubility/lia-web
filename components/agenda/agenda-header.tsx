@@ -11,6 +11,7 @@ import {
   type AgendaView,
   addDays,
   formatIsoDate,
+  isSameDay,
   startOfWeek,
 } from "@/lib/agenda/range";
 import { AppointmentSheet } from "@/components/agenda/appointment-sheet";
@@ -34,7 +35,7 @@ function buildLabel(view: AgendaView, date: Date): string {
   const start = startOfWeek(date);
   const end = addDays(start, 5);
   if (start.getMonth() === end.getMonth()) {
-    return `${start.getDate()}-${end.getDate()} ${MONTHS_SHORT[start.getMonth()]}`;
+    return `${start.getDate()}–${end.getDate()} ${MONTHS_SHORT[start.getMonth()]}`;
   }
   return `${start.getDate()} ${MONTHS_SHORT[start.getMonth()]} – ${end.getDate()} ${MONTHS_SHORT[end.getMonth()]}`;
 }
@@ -53,6 +54,13 @@ export function AgendaHeader({ view, date, patients, catalog }: AgendaHeaderProp
   const [newOpen, setNewOpen] = useState(false);
 
   const label = useMemo(() => buildLabel(view, date), [view, date]);
+  const today = new Date();
+  const isCurrentPeriod =
+    view === "day"
+      ? isSameDay(date, today)
+      : view === "week"
+        ? isSameDay(startOfWeek(date), startOfWeek(today))
+        : date.getFullYear() === today.getFullYear() && date.getMonth() === today.getMonth();
 
   function navigate(nextView: AgendaView, nextDate: Date) {
     const params = new URLSearchParams(searchParams);
@@ -72,24 +80,24 @@ export function AgendaHeader({ view, date, patients, catalog }: AgendaHeaderProp
   ];
 
   return (
-    <div className="flex flex-wrap items-center justify-between gap-4">
-      <div className="flex items-center gap-4">
-        <div className="flex items-center gap-1">
+    <div className="grid gap-3 sm:grid-cols-[minmax(0,1fr)_auto] sm:items-center">
+      <div className="flex min-w-0 flex-wrap items-center gap-2 sm:gap-3">
+        <div className="flex h-9 items-center gap-0.5">
           <button
             type="button"
             onClick={() => navigate(view, shift(view, date, -1))}
-            className="grid h-8 w-8 place-items-center rounded-md text-muted-foreground transition-colors hover:bg-secondary hover:text-foreground"
+            className="grid h-9 w-9 place-items-center rounded-md text-muted-foreground transition-colors hover:bg-secondary hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
             aria-label="Anterior"
           >
             <HugeiconsIcon icon={ArrowLeft01Icon} size={16} strokeWidth={1.75} />
           </button>
-          <span className="px-2 font-mono text-sm font-medium tabular-nums text-foreground">
+          <span className="min-w-24 px-1.5 text-center font-mono text-sm font-medium tabular-nums text-foreground sm:min-w-28">
             {label}
           </span>
           <button
             type="button"
             onClick={() => navigate(view, shift(view, date, 1))}
-            className="grid h-8 w-8 place-items-center rounded-md text-muted-foreground transition-colors hover:bg-secondary hover:text-foreground"
+            className="grid h-9 w-9 place-items-center rounded-md text-muted-foreground transition-colors hover:bg-secondary hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
             aria-label="Próximo"
           >
             <HugeiconsIcon icon={ArrowRight01Icon} size={16} strokeWidth={1.75} />
@@ -99,12 +107,14 @@ export function AgendaHeader({ view, date, patients, catalog }: AgendaHeaderProp
         <button
           type="button"
           onClick={goToday}
-          className="font-mono text-xs font-semibold uppercase tracking-wider text-primary transition-opacity hover:opacity-80"
+          disabled={isCurrentPeriod}
+          aria-current={isCurrentPeriod ? "date" : undefined}
+          className="h-9 rounded-md px-2.5 font-mono text-xs font-semibold uppercase tracking-wider text-muted-foreground transition-colors hover:bg-secondary hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring disabled:cursor-default disabled:opacity-40"
         >
           Hoje
         </button>
 
-        <div className="flex items-center gap-0 rounded-md bg-secondary p-0.5">
+        <div className="flex h-9 items-center rounded-md bg-secondary p-0.5">
           {views.map((v) => {
             const active = v.value === view;
             return (
@@ -113,9 +123,9 @@ export function AgendaHeader({ view, date, patients, catalog }: AgendaHeaderProp
                 href={`${pathname}?view=${v.value}&date=${formatIsoDate(date)}`}
                 scroll={false}
                 className={cn(
-                  "rounded-sm px-3 py-1.5 font-mono text-xs font-semibold uppercase tracking-wider transition-colors",
+                  "flex h-8 items-center rounded-sm px-3 font-mono text-xs font-semibold uppercase tracking-wider transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-ring",
                   active
-                    ? "bg-card text-foreground shadow-sm"
+                    ? "bg-secondary-foreground/[0.08] text-foreground ring-1 ring-inset ring-border/70"
                     : "text-muted-foreground hover:text-foreground"
                 )}
               >
@@ -129,7 +139,7 @@ export function AgendaHeader({ view, date, patients, catalog }: AgendaHeaderProp
       <button
         type="button"
         onClick={() => setNewOpen(true)}
-        className="inline-flex h-9 items-center gap-1.5 rounded-md bg-primary px-4 text-sm font-semibold text-primary-foreground transition-opacity hover:opacity-90"
+        className="inline-flex h-9 w-full items-center justify-center gap-1.5 rounded-md bg-accent px-4 text-sm font-semibold text-accent-foreground transition-opacity hover:opacity-90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background sm:w-auto"
       >
         <HugeiconsIcon icon={PlusSignIcon} size={16} strokeWidth={2} />
         Nova consulta

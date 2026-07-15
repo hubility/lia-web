@@ -26,6 +26,7 @@ const LABEL: Record<string, string> = {
   receitas: 'Receitas',
   atestados: 'Atestados',
   usuarios: 'Usuários',
+  configuracoes: 'Configurações',
   prontuario: 'Prontuário',
 };
 

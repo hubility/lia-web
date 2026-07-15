@@ -13,7 +13,16 @@ export async function getClinicProfile() {
     address: "Rua das Flores, 123 - Centro",
     cityLine: "Cidade - UF - CEP 00000-000",
     website: "www.darcymavignier.com.br",
+    opensAtMinutes: 8 * 60,
+    closesAtMinutes: 19 * 60,
     createdAt: new Date(),
     updatedAt: new Date(),
   };
+}
+
+export async function updateClinicSchedule(opensAtMinutes: number, closesAtMinutes: number) {
+  return prisma.clinicProfile.update({
+    where: { id: "default" },
+    data: { opensAtMinutes, closesAtMinutes },
+  });
 }

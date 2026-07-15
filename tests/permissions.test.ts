@@ -22,10 +22,13 @@ describe("role permissions", () => {
     }
   });
 
-  it("restricts users and catalog writes to admin", () => {
+  it("restricts users, settings and catalog writes to admin", () => {
     expect(canAccessResource("admin", "users", "create")).toBe(true);
     expect(canAccessResource("dentist", "users", "read")).toBe(false);
     expect(canAccessResource("assistant", "users", "delete")).toBe(false);
+    expect(canAccessResource("admin", "settings", "update")).toBe(true);
+    expect(canAccessResource("dentist", "settings", "read")).toBe(false);
+    expect(canAccessResource("assistant", "settings", "update")).toBe(false);
     expect(canAccessResource("admin", "catalog", "update")).toBe(true);
     expect(canAccessResource("dentist", "catalog", "read")).toBe(true);
     expect(canAccessResource("assistant", "catalog", "read")).toBe(true);

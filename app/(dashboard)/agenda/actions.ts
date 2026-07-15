@@ -22,6 +22,7 @@ import {
 } from "@/lib/modules/timeblocks/service";
 import { findCollision } from "@/lib/agenda/collision";
 import { endOfDay, startOfDay } from "@/lib/agenda/range";
+import { assertBookable, BookingError } from "@/lib/modules/appointments/booking";
 
 function appointmentInput(formData: FormData) {
   return {
@@ -37,13 +38,17 @@ function appointmentInput(formData: FormData) {
 
 export async function createAppointmentAction(formData: FormData) {
   await requirePermission("appointments", "create");
-  await createAppointment(appointmentInput(formData));
+  const input = appointmentInput(formData);
+  await assertBookable(input);
+  await createAppointment(input);
   revalidatePath("/agenda");
 }
 
 export async function updateAppointmentAction(id: string, formData: FormData) {
   await requirePermission("appointments", "update");
-  await updateAppointment(id, appointmentInput(formData));
+  const input = appointmentInput(formData);
+  await assertBookable(input, id);
+  await updateAppointment(id, input);
   revalidatePath("/agenda");
 }
 
@@ -89,14 +94,11 @@ export async function moveAppointmentAction(
   if (Number.isNaN(startsAt.getTime())) return { ok: false, error: "Data inválida" };
   if (durationMinutes < 5) return { ok: false, error: "Duração muito curta" };
 
-  const from = startOfDay(startsAt);
-  const to = endOfDay(startsAt);
-  const [appts, blocks] = await Promise.all([listAppointments(from, to), listTimeBlocks(from, to)]);
-
-  const collision = findCollision({ startsAt, durationMinutes }, appts, blocks, id);
-  if (collision) {
-    const label = collision.kind === "appointment" ? collision.label : `bloqueio: ${collision.label}`;
-    return { ok: false, error: `Choca com ${label}` };
+  try {
+    await assertBookable({ startsAt, durationMinutes }, id);
+  } catch (error) {
+    if (error instanceof BookingError) return { ok: false, error: error.message };
+    throw error;
   }
 
   await moveAppointment(id, startsAt, durationMinutes);

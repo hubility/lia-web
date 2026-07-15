@@ -8,11 +8,9 @@ import { CSS } from "@dnd-kit/utilities";
 import { cn } from "@/lib/utils";
 import { procedureColorVar } from "@/lib/agenda/colors";
 import {
-  GRID_HEIGHT,
-  PX_PER_MINUTE,
   buildDragId,
-  minutesFromHourStart,
 } from "@/lib/agenda/dnd";
+import { type ClinicSchedule, minutesFromScheduleStart } from "@/lib/agenda/schedule";
 
 export type AppointmentWithRelations = Appointment & {
   patient: Patient;
@@ -23,6 +21,9 @@ interface Props {
   appointment: AppointmentWithRelations;
   effectiveStartsAt: Date;
   effectiveDuration: number;
+  gridHeight: number;
+  pixelsPerMinute: number;
+  schedule: ClinicSchedule;
   dense: boolean;
   draggable: boolean;
   hasCollision?: boolean;
@@ -38,6 +39,9 @@ export function AppointmentCard({
   appointment,
   effectiveStartsAt,
   effectiveDuration,
+  gridHeight,
+  pixelsPerMinute,
+  schedule,
   dense,
   draggable,
   hasCollision,
@@ -45,8 +49,8 @@ export function AppointmentCard({
 }: Props) {
   const start = effectiveStartsAt;
   const end = new Date(start.getTime() + effectiveDuration * 60_000);
-  const top = minutesFromHourStart(start) * PX_PER_MINUTE;
-  const height = effectiveDuration * PX_PER_MINUTE;
+  const top = minutesFromScheduleStart(start, schedule) * pixelsPerMinute;
+  const height = effectiveDuration * pixelsPerMinute;
 
   const {
     setNodeRef: setMoveRef,
@@ -69,7 +73,9 @@ export function AppointmentCard({
     disabled: !draggable,
   });
 
-  if (top + height < 0 || top > GRID_HEIGHT) return null;
+  if (top + height <= 0 || top >= gridHeight) return null;
+  const visibleTop = Math.max(0, top);
+  const visibleHeight = Math.min(gridHeight, top + height) - visibleTop;
 
   const color = procedureColorVar(appointment.catalogItemId ?? appointment.title);
   const isCancelled = appointment.status === "cancelled";
@@ -78,30 +84,34 @@ export function AppointmentCard({
   const isDragging = isMoving || isResizing;
   const transform = isMoving ? CSS.Translate.toString(moveTransform) : undefined;
 
-  const minHeight = dense ? 26 : 36;
-  const heightOffset = dense ? 2 : 4;
+  const cardHeight = Math.min(
+    Math.max(visibleHeight - 2, dense ? 28 : 32),
+    gridHeight - visibleTop
+  );
+  const singleLine = cardHeight < 44;
+  const showTitle = cardHeight >= (dense ? 68 : 76);
+  const statusIcon = isConfirmed || isCompleted;
 
   return (
     <div
       ref={setMoveRef}
       style={{
-        top,
-        height: Math.max(height - heightOffset, minHeight),
-        borderLeftWidth: 3,
-        borderLeftColor: color,
+        top: visibleTop,
+        height: cardHeight,
+        borderColor: hasCollision
+          ? "var(--destructive)"
+          : `color-mix(in srgb, ${color} 45%, var(--border))`,
+        backgroundColor: `color-mix(in srgb, ${color} 7%, var(--card))`,
         transform,
         zIndex: isDragging ? 30 : undefined,
       }}
       className={cn(
-        "absolute flex flex-col overflow-hidden rounded-md border bg-card text-left shadow-sm transition-shadow",
-        dense ? "left-1 right-1 px-2 py-1 text-xs" : "left-2 right-2 gap-0.5 px-3 py-2",
-        hasCollision ? "border-destructive ring-2 ring-destructive/40" : "border-border/60",
+        "absolute flex overflow-hidden rounded-md border text-left shadow-sm transition-[box-shadow,opacity]",
+        dense ? "left-1 right-1 text-xs" : "left-2 right-2",
+        hasCollision && "ring-2 ring-destructive/40",
         isCancelled && "opacity-50",
-        draggable && "touch-none",
         isDragging ? "cursor-grabbing shadow-lg" : "hover:shadow-md"
       )}
-      {...(draggable ? moveListeners : {})}
-      {...(draggable ? moveAttributes : {})}
     >
       <button
         type="button"
@@ -109,59 +119,90 @@ export function AppointmentCard({
           e.stopPropagation();
           if (!isDragging) onClick();
         }}
+        aria-label={`${formatHM(start)}, ${appointment.patient.name}, ${appointment.title}, ${effectiveDuration} minutos`}
         className={cn(
-          "flex flex-1 flex-col text-left",
-          dense ? "gap-0" : "gap-0.5",
-          draggable && "cursor-grab active:cursor-grabbing"
+          "flex h-full min-w-0 flex-1 text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-ring",
+          singleLine
+            ? "items-center gap-2 px-2"
+            : "flex-col justify-center gap-0.5 px-2.5 py-1",
+          draggable && "touch-none cursor-grab active:cursor-grabbing"
         )}
-        tabIndex={-1}
+        {...(draggable ? moveListeners : {})}
+        {...(draggable ? moveAttributes : {})}
       >
-        <div className={cn("flex items-center justify-between gap-1", dense ? "leading-tight" : "gap-2")}>
-          <span
-            className={cn(
-              "font-mono font-medium tabular-nums text-muted-foreground",
-              dense ? "text-[10px]" : "text-xs"
-            )}
-          >
-            {formatHM(start)} – {formatHM(end)}
-            {dense && effectiveDuration !== 60 && <span className="ml-1">· {effectiveDuration}min</span>}
-            {!dense && <span className="ml-1">· {effectiveDuration}min</span>}
-          </span>
-          {isConfirmed && (
-            <HugeiconsIcon
-              icon={Tick02Icon}
-              size={dense ? 12 : 14}
-              strokeWidth={2.5}
-              className="text-success"
-            />
-          )}
-          {isCompleted && (
-            <HugeiconsIcon
-              icon={Tick02Icon}
-              size={dense ? 12 : 14}
-              strokeWidth={2.5}
-              className="text-muted-foreground"
-            />
-          )}
-        </div>
-        <div
-          className={cn(
-            "truncate font-medium text-foreground",
-            dense ? "text-xs leading-tight" : "text-base",
-            isCancelled && "line-through"
-          )}
-        >
-          {appointment.patient.name}
-        </div>
-        {dense
-          ? height >= 72 && (
-              <div className="truncate text-[11px] leading-tight text-muted-foreground">
+        {singleLine ? (
+          <>
+            <span className="shrink-0 font-mono text-[10px] font-medium tabular-nums text-muted-foreground">
+              {formatHM(start)}
+            </span>
+            <span
+              className={cn(
+                "min-w-0 truncate font-medium text-foreground",
+                dense ? "text-xs" : "text-sm",
+                dense ? "flex-1" : "max-w-[45%] shrink-0",
+                isCancelled && "line-through"
+              )}
+            >
+              {appointment.patient.name}
+            </span>
+            {!dense && (
+              <span className="min-w-0 flex-1 truncate text-xs text-muted-foreground">
                 {appointment.title}
-              </div>
-            )
-          : (
-              <div className="truncate text-sm text-muted-foreground">{appointment.title}</div>
+              </span>
             )}
+            {statusIcon && (
+              <HugeiconsIcon
+                icon={Tick02Icon}
+                size={12}
+                strokeWidth={2.5}
+                className={cn("shrink-0", isConfirmed ? "text-success" : "text-muted-foreground")}
+              />
+            )}
+          </>
+        ) : (
+          <>
+            <div className="flex w-full min-w-0 items-center gap-2">
+              <span
+                className={cn(
+                  "min-w-0 flex-1 truncate font-medium text-foreground",
+                  dense ? "text-xs leading-tight" : "text-sm leading-tight",
+                  isCancelled && "line-through"
+                )}
+              >
+                {appointment.patient.name}
+              </span>
+              {statusIcon && (
+                <HugeiconsIcon
+                  icon={Tick02Icon}
+                  size={dense ? 12 : 14}
+                  strokeWidth={2.5}
+                  className={cn(
+                    "shrink-0",
+                    isConfirmed ? "text-success" : "text-muted-foreground"
+                  )}
+                />
+              )}
+            </div>
+            <span
+              className={cn(
+                "w-full truncate font-mono font-medium tabular-nums text-muted-foreground",
+                dense ? "text-[10px] leading-tight" : "text-xs leading-tight"
+              )}
+            >
+              {formatHM(start)} – {formatHM(end)}
+            </span>
+            {showTitle && (
+              <span
+                className={cn(
+                  "w-full truncate text-muted-foreground",
+                  dense ? "text-[11px] leading-tight" : "text-xs"
+                )}
+              >
+                {appointment.title}
+              </span>
+            )}
+          </>
+        )}
       </button>
 
       {draggable && (

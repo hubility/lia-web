@@ -66,6 +66,9 @@ Patrones reales observados:
 ## Components
 
 - **Tarjeta:** `rounded-md border bg-card shadow-sm`, borde `border/60`. Contenedor calmo.
+- **Cita de agenda:** borde completo y tinte mínimo derivados del color de procedimiento;
+  nunca stripe lateral. En bloques cortos, hora + paciente en una línea. El tipo de consulta
+  aparece cuando el ancho o el alto reales lo permiten.
 - **Segmented control** (DIA/SEMANA/MÊS, pestañas): pista `bg-secondary p-0.5 rounded-md`;
   activo `bg-card text-foreground shadow-sm`; inactivo `text-muted-foreground hover:text-foreground`.
   Items mono, uppercase, `tracking-wider`, `text-xs`.
@@ -87,11 +90,23 @@ Patrones reales observados:
 - Ghost de arrastre: borde discontinuo `border-primary/50` sobre `bg-primary/5`.
 - `prefers-reduced-motion`: alternativa obligatoria (crossfade/instantáneo).
 
+## Agenda responsive
+
+- Día y semana ocupan el alto restante del shell. La escala temporal se calcula desde el
+  alto real del contenedor; no existe un `PX_PER_HOUR` global de presentación.
+- `56px` por hora es únicamente el suelo de legibilidad. Por debajo, la línea temporal hace
+  scroll vertical; por encima, las horas se expanden para aprovechar el viewport.
+- La semana conserva un ancho mínimo legible por día y usa scroll horizontal. La cabecera
+  de días y el canal horario permanecen fijos dentro del mismo plano de scroll.
+- Posición, hover, resize y drag-and-drop comparten la misma escala medida. Nunca calcular
+  la interacción con una métrica diferente de la usada para dibujar.
+- La densidad de una cita depende del tamaño renderizado del bloque, no solo de la vista.
+  El paciente tiene prioridad sobre intervalo, duración y título.
+
 ## Anti-patterns (prohibido en vistas nuevas)
 
-- **Borde-acento lateral > 1px** como decoración. (La tarjeta de cita usa un stripe de 3px
-  de color de procedimiento; es legado, NO se replica en diseño nuevo: usar borde completo,
-  tinte de fondo o icono/numeral.)
+- **Borde-acento lateral > 1px** como decoración. Usar borde completo, tinte de fondo o
+  icono/numeral para comunicar categoría o estado.
 - Texto en gradiente, glassmorphism decorativo, sombras dramáticas, gradientes de fondo.
 - Tarjetas anidadas. Rejillas de tarjetas idénticas. Eyebrow mono en cada sección "porque sí".
 

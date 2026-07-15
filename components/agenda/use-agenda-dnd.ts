@@ -15,16 +15,19 @@ import {
   moveTimeBlockAction,
 } from "@/app/(dashboard)/agenda/actions";
 import {
-  HOURS,
   MIN_DURATION_MINUTES,
-  PX_PER_MINUTE,
   type DragId,
-  applyMinutesToDay,
-  minutesFromHourStart,
   parseDayDropId,
   parseDragId,
   snapMinutes,
 } from "@/lib/agenda/dnd";
+import {
+  type ClinicSchedule,
+  applyMinutesToScheduleDay,
+  clampScheduleOffset,
+  minutesFromScheduleStart,
+  scheduleDurationMinutes,
+} from "@/lib/agenda/schedule";
 import { type CollisionTarget, findCollision } from "@/lib/agenda/collision";
 import type { AppointmentWithRelations } from "./cards/appointment-card";
 
@@ -44,9 +47,17 @@ interface Options {
   appointments: AppointmentWithRelations[];
   timeBlocks: TimeBlock[];
   defaultDay?: Date;
+  pixelsPerMinute: number;
+  schedule: ClinicSchedule;
 }
 
-export function useAgendaDnd({ appointments, timeBlocks, defaultDay }: Options) {
+export function useAgendaDnd({
+  appointments,
+  timeBlocks,
+  defaultDay,
+  pixelsPerMinute,
+  schedule,
+}: Options) {
   const [appointmentOverrides, setAppointmentOverrides] = useState<
     Map<string, AppointmentOverride>
   >(new Map());
@@ -92,7 +103,7 @@ export function useAgendaDnd({ appointments, timeBlocks, defaultDay }: Options) 
     deltaY: number,
     overId: string | null
   ): { startsAt: Date; durationMinutes: number; endsAt: Date } | null {
-    const minutesDelta = deltaY / PX_PER_MINUTE;
+    const minutesDelta = deltaY / pixelsPerMinute;
 
     if (drag.kind === "appointment") {
       const appt = appointments.find((a) => a.id === drag.id);
@@ -102,7 +113,7 @@ export function useAgendaDnd({ appointments, timeBlocks, defaultDay }: Options) 
         const rawDuration = orig.durationMinutes + minutesDelta;
         const newDuration = Math.max(MIN_DURATION_MINUTES, snapMinutes(rawDuration));
         const maxDuration =
-          HOURS * 60 - minutesFromHourStart(orig.startsAt);
+          scheduleDurationMinutes(schedule) - minutesFromScheduleStart(orig.startsAt, schedule);
         const clamped = Math.min(newDuration, maxDuration);
         return {
           startsAt: orig.startsAt,
@@ -112,13 +123,10 @@ export function useAgendaDnd({ appointments, timeBlocks, defaultDay }: Options) 
       }
       const targetDay =
         (overId && parseDayDropId(overId)) || defaultDay || orig.startsAt;
-      const startMinutes = minutesFromHourStart(orig.startsAt);
+      const startMinutes = minutesFromScheduleStart(orig.startsAt, schedule);
       const snapped = snapMinutes(startMinutes + minutesDelta);
-      const clamped = Math.max(
-        0,
-        Math.min(HOURS * 60 - orig.durationMinutes, snapped)
-      );
-      const newStart = applyMinutesToDay(targetDay, clamped);
+      const clamped = clampScheduleOffset(snapped, orig.durationMinutes, schedule);
+      const newStart = applyMinutesToScheduleDay(targetDay, clamped, schedule);
       return {
         startsAt: newStart,
         durationMinutes: orig.durationMinutes,
@@ -136,7 +144,8 @@ export function useAgendaDnd({ appointments, timeBlocks, defaultDay }: Options) 
     if (drag.action === "resize") {
       const rawDuration = duration + minutesDelta;
       const newDuration = Math.max(MIN_DURATION_MINUTES, snapMinutes(rawDuration));
-      const maxDuration = HOURS * 60 - minutesFromHourStart(orig.startsAt);
+      const maxDuration =
+        scheduleDurationMinutes(schedule) - minutesFromScheduleStart(orig.startsAt, schedule);
       const clamped = Math.min(newDuration, maxDuration);
       return {
         startsAt: orig.startsAt,
@@ -146,10 +155,10 @@ export function useAgendaDnd({ appointments, timeBlocks, defaultDay }: Options) 
     }
     const targetDay =
       (overId && parseDayDropId(overId)) || defaultDay || orig.startsAt;
-    const startMinutes = minutesFromHourStart(orig.startsAt);
+    const startMinutes = minutesFromScheduleStart(orig.startsAt, schedule);
     const snapped = snapMinutes(startMinutes + minutesDelta);
-    const clamped = Math.max(0, Math.min(HOURS * 60 - duration, snapped));
-    const newStart = applyMinutesToDay(targetDay, clamped);
+    const clamped = clampScheduleOffset(snapped, duration, schedule);
+    const newStart = applyMinutesToScheduleDay(targetDay, clamped, schedule);
     return {
       startsAt: newStart,
       durationMinutes: duration,

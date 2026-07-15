@@ -1,5 +1,6 @@
 import { findCollision } from "@/lib/agenda/collision";
-import { HOUR_START, HOUR_END } from "@/lib/agenda/dnd";
+import { formatClockMinutes } from "@/lib/agenda/schedule";
+import { getClinicSchedule } from "@/lib/clinic/schedule";
 import { utcToWallClock, wallClockToUtc } from "@/lib/clinic-tz";
 import { listAppointments } from "@/lib/modules/appointments/service";
 import { listTimeBlocks } from "@/lib/modules/timeblocks/service";
@@ -18,9 +19,6 @@ export class BookingError extends Error {
   }
 }
 
-const OPEN_MIN = HOUR_START * 60;
-const CLOSE_MIN = HOUR_END * 60;
-
 export type BookingCandidate = {
   startsAt: Date;
   durationMinutes: number;
@@ -31,6 +29,7 @@ export async function assertBookable(
   excludeId?: string
 ): Promise<void> {
   const { startsAt, durationMinutes } = candidate;
+  const schedule = await getClinicSchedule();
 
   if (durationMinutes < 5) {
     throw new BookingError("Duração inválida.", 422);
@@ -42,8 +41,14 @@ export async function assertBookable(
     throw new BookingError("A clínica não atende aos domingos.", 422);
   }
   const startMin = wall.hour * 60 + wall.minute;
-  if (startMin < OPEN_MIN || startMin + durationMinutes > CLOSE_MIN) {
-    throw new BookingError("Horário fora do expediente (08:00–18:00).", 422);
+  if (
+    startMin < schedule.opensAtMinutes ||
+    startMin + durationMinutes > schedule.closesAtMinutes
+  ) {
+    throw new BookingError(
+      `Horário fora do expediente (${formatClockMinutes(schedule.opensAtMinutes)}–${formatClockMinutes(schedule.closesAtMinutes)}).`,
+      422
+    );
   }
 
   // Solape contra citas y bloqueos del mismo día (de Fortaleza).

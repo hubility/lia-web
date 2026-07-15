@@ -1,10 +1,5 @@
 export const SNAP_MINUTES = 15;
-export const PX_PER_HOUR = 48;
-export const PX_PER_MINUTE = PX_PER_HOUR / 60;
-export const HOUR_START = 8;
-export const HOUR_END = 18;
-export const HOURS = HOUR_END - HOUR_START;
-export const GRID_HEIGHT = HOURS * PX_PER_HOUR;
+export const MIN_PX_PER_HOUR = 56;
 export const MIN_DURATION_MINUTES = 15;
 
 export type DragAction = "move" | "resize";
@@ -52,15 +47,4 @@ export function parseDayDropId(s: string): Date | null {
 
 export function snapMinutes(minutes: number): number {
   return Math.round(minutes / SNAP_MINUTES) * SNAP_MINUTES;
-}
-
-export function minutesFromHourStart(date: Date): number {
-  return (date.getHours() - HOUR_START) * 60 + date.getMinutes();
-}
-
-export function applyMinutesToDay(day: Date, minutesFromStart: number): Date {
-  const total = HOUR_START * 60 + minutesFromStart;
-  const d = new Date(day);
-  d.setHours(Math.floor(total / 60), total % 60, 0, 0);
-  return d;
 }

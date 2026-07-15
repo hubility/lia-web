@@ -1,6 +1,9 @@
 import type { Appointment, TimeBlock } from "@prisma/client";
 import { findCollision } from "@/lib/agenda/collision";
-import { HOUR_START, HOUR_END } from "@/lib/agenda/dnd";
+import {
+  DEFAULT_CLINIC_SCHEDULE,
+  type ClinicSchedule,
+} from "@/lib/agenda/schedule";
 import { utcToWallClock, wallClockToUtc } from "@/lib/clinic-tz";
 
 // Motor de disponibilidad: la inversa de `findCollision`. En vez de "¿este hueco
@@ -22,13 +25,18 @@ export type FindFreeSlotsInput = {
   durationMinutes: number;
   appointments: AppointmentLike[];
   timeBlocks: TimeBlockLike[];
+  schedule?: ClinicSchedule;
 };
 
-const OPEN_MIN = HOUR_START * 60; // 08:00 → 480
-const CLOSE_MIN = HOUR_END * 60; // 18:00 → 1080
-
 export function findFreeSlots(input: FindFreeSlotsInput): Date[] {
-  const { from, to, durationMinutes, appointments, timeBlocks } = input;
+  const {
+    from,
+    to,
+    durationMinutes,
+    appointments,
+    timeBlocks,
+    schedule = DEFAULT_CLINIC_SCHEDULE,
+  } = input;
   if (durationMinutes <= 0 || from.getTime() > to.getTime()) return [];
 
   const slots: Date[] = [];
@@ -46,8 +54,8 @@ export function findFreeSlots(input: FindFreeSlotsInput): Date[] {
     // Domingo cerrado.
     if (day.weekday !== 0) {
       for (
-        let startMin = OPEN_MIN;
-        startMin + durationMinutes <= CLOSE_MIN;
+        let startMin = schedule.opensAtMinutes;
+        startMin + durationMinutes <= schedule.closesAtMinutes;
         startMin += durationMinutes
       ) {
         const startsAt = wallClockToUtc(

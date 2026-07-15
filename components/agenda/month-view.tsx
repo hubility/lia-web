@@ -39,18 +39,19 @@ export function MonthView({ date, appointments }: MonthViewProps) {
   }
 
   return (
-    <div>
-      <div className="grid grid-cols-7 border-y border-border">
-        {DAY_LABELS.map((d) => (
-          <div
-            key={d}
-            className="border-l border-border px-2 py-2 font-mono text-[11px] font-semibold uppercase tracking-wider text-muted-foreground first:border-l-0"
-          >
-            {d}
-          </div>
-        ))}
-      </div>
-      <div className="grid grid-cols-7 grid-rows-6">
+    <div className="scrollbar-slim h-full overflow-auto">
+      <div className="flex min-h-full min-w-3xl flex-col">
+        <div className="sticky top-0 z-20 grid grid-cols-7 border-y border-border bg-background">
+          {DAY_LABELS.map((d) => (
+            <div
+              key={d}
+              className="border-l border-border px-2 py-2 font-mono text-[11px] font-semibold uppercase tracking-wider text-muted-foreground first:border-l-0"
+            >
+              {d}
+            </div>
+          ))}
+        </div>
+        <div className="grid flex-1 grid-cols-7 grid-rows-6">
         {cells.map((cell, i) => {
           const inMonth = cell.getMonth() === currentMonth;
           const isToday = isSameDay(cell, today);
@@ -61,7 +62,7 @@ export function MonthView({ date, appointments }: MonthViewProps) {
               key={i}
               href={`${pathname}?view=day&date=${key}`}
               className={cn(
-                "flex min-h-28 flex-col gap-1 border-b border-l border-border p-2 transition-colors hover:bg-secondary/40",
+                "flex min-h-24 flex-col gap-1 border-b border-l border-border p-2 transition-colors hover:bg-secondary/40 focus-visible:z-10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-ring",
                 !inMonth && "bg-muted/30",
                 isToday && "bg-primary/5"
               )}
@@ -86,11 +87,15 @@ export function MonthView({ date, appointments }: MonthViewProps) {
                 {items.slice(0, 3).map((a) => (
                   <div
                     key={a.id}
-                    className="flex items-center gap-1.5 truncate rounded-sm bg-card px-1.5 py-0.5 text-[10px]"
+                    className="flex items-center gap-1.5 truncate rounded-sm border bg-card px-1.5 py-0.5 text-[10px]"
                     style={{
-                      borderLeft: `2px solid ${procedureColorVar(a.catalogItemId ?? a.title)}`,
+                      borderColor: `color-mix(in srgb, ${procedureColorVar(a.catalogItemId ?? a.title)} 40%, var(--border))`,
                     }}
                   >
+                    <span
+                      className="size-1.5 shrink-0 rounded-full"
+                      style={{ backgroundColor: procedureColorVar(a.catalogItemId ?? a.title) }}
+                    />
                     <span className="font-mono tabular-nums text-muted-foreground">
                       {new Date(a.startsAt).getHours().toString().padStart(2, "0")}:
                       {new Date(a.startsAt).getMinutes().toString().padStart(2, "0")}
@@ -107,6 +112,7 @@ export function MonthView({ date, appointments }: MonthViewProps) {
             </Link>
           );
         })}
+        </div>
       </div>
     </div>
   );

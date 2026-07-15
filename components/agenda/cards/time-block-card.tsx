@@ -5,16 +5,17 @@ import { useDraggable } from "@dnd-kit/core";
 import { CSS } from "@dnd-kit/utilities";
 import { cn } from "@/lib/utils";
 import {
-  GRID_HEIGHT,
-  PX_PER_MINUTE,
   buildDragId,
-  minutesFromHourStart,
 } from "@/lib/agenda/dnd";
+import { type ClinicSchedule, minutesFromScheduleStart } from "@/lib/agenda/schedule";
 
 interface Props {
   block: TimeBlock;
   effectiveStartsAt: Date;
   effectiveEndsAt: Date;
+  gridHeight: number;
+  pixelsPerMinute: number;
+  schedule: ClinicSchedule;
   dense: boolean;
   hasCollision?: boolean;
 }
@@ -28,44 +29,51 @@ export function TimeBlockCard({
   block,
   effectiveStartsAt,
   effectiveEndsAt,
+  gridHeight,
+  pixelsPerMinute,
+  schedule,
   dense,
   hasCollision,
 }: Props) {
-  const top = minutesFromHourStart(effectiveStartsAt) * PX_PER_MINUTE;
+  const top = minutesFromScheduleStart(effectiveStartsAt, schedule) * pixelsPerMinute;
   const minutes = (effectiveEndsAt.getTime() - effectiveStartsAt.getTime()) / 60_000;
-  const height = minutes * PX_PER_MINUTE;
-
-  if (top + height < 0 || top > GRID_HEIGHT) return null;
+  const height = minutes * pixelsPerMinute;
+  if (top + height <= 0 || top >= gridHeight) return null;
+  const visibleTop = Math.max(0, top);
+  const visibleHeight = Math.min(gridHeight, top + height) - visibleTop;
+  const cardHeight = Math.min(
+    Math.max(visibleHeight - 2, dense ? 28 : 32),
+    gridHeight - visibleTop
+  );
+  const singleLine = cardHeight < 44;
 
   if (block.kind === "lunch") {
     return (
       <div
         onClick={(e) => e.stopPropagation()}
         className={cn(
-          "absolute flex flex-col justify-center overflow-hidden rounded-md border border-border/40 italic text-muted-foreground",
-          dense ? "left-0.5 right-0.5 px-2.5 text-xs" : "left-1 right-1 px-3"
+          "absolute flex items-center overflow-hidden rounded-md border border-dashed border-border bg-muted/55 text-muted-foreground",
+          dense ? "left-0.5 right-0.5 gap-1.5 px-2 text-xs" : "left-1 right-1 gap-2 px-3"
         )}
         style={{
-          top,
-          height: Math.max(height - (dense ? 2 : 4), dense ? 24 : 32),
-          backgroundImage:
-            "repeating-linear-gradient(135deg, transparent 0, transparent 6px, var(--border) 6px, var(--border) 7px)",
+          top: visibleTop,
+          height: cardHeight,
         }}
       >
         <span
           className={cn(
-            "font-mono not-italic tabular-nums text-muted-foreground/70",
+            "shrink-0 font-mono tabular-nums text-muted-foreground/70",
             dense ? "text-[10px]" : "text-xs"
           )}
         >
-          {formatHM(effectiveStartsAt)} – {formatHM(effectiveEndsAt)}
+          {singleLine ? formatHM(effectiveStartsAt) : `${formatHM(effectiveStartsAt)} – ${formatHM(effectiveEndsAt)}`}
         </span>
-        <span className="text-sm">{block.label}</span>
+        <span className="truncate text-sm">{block.label}</span>
       </div>
     );
   }
 
-  return <DraggableBlock {...{ block, effectiveStartsAt, effectiveEndsAt, dense, hasCollision, top, height, minutes }} />;
+  return <DraggableBlock {...{ block, effectiveStartsAt, effectiveEndsAt, gridHeight, pixelsPerMinute, schedule, dense, hasCollision, top: visibleTop, height: visibleHeight }} />;
 }
 
 function DraggableBlock({
@@ -76,7 +84,7 @@ function DraggableBlock({
   hasCollision,
   top,
   height,
-}: Props & { top: number; height: number; minutes: number }) {
+}: Props & { top: number; height: number }) {
   const {
     setNodeRef: setMoveRef,
     listeners: moveListeners,
@@ -103,16 +111,14 @@ function DraggableBlock({
       ref={setMoveRef}
       onClick={(e) => e.stopPropagation()}
       className={cn(
-        "absolute flex flex-col gap-0.5 overflow-hidden rounded-md border bg-primary/10 touch-none",
-        dense ? "left-0.5 right-0.5 px-2.5 py-1.5 text-xs" : "left-1 right-1 px-3 py-2",
+        "absolute flex flex-col justify-center gap-0.5 overflow-hidden rounded-md border bg-primary/8 touch-none",
+        dense ? "left-0.5 right-0.5 px-2 py-1 text-xs" : "left-1 right-1 px-3 py-1.5",
         hasCollision ? "border-destructive ring-2 ring-destructive/40" : "border-primary/30",
         isDragging ? "cursor-grabbing shadow-lg" : "cursor-grab"
       )}
       style={{
         top,
-        height: Math.max(height - (dense ? 2 : 4), dense ? 28 : 36),
-        borderLeftWidth: 3,
-        borderLeftColor: "var(--primary)",
+        height: Math.max(height - 2, dense ? 28 : 32),
         transform,
         zIndex: isDragging ? 30 : undefined,
       }}
