@@ -1,9 +1,12 @@
 import { requirePermission } from "@/lib/auth/guards";
+import { getClinicProfile } from "@/lib/clinic/profile";
 import { getClinicSchedule } from "@/lib/clinic/schedule";
+import { ClinicProfileForm } from "./clinic-profile-form";
 import { ScheduleForm } from "./schedule-form";
 
 export default async function SettingsPage() {
   await requirePermission("settings", "read");
+  const profile = await getClinicProfile();
   const schedule = await getClinicSchedule();
 
   return (
@@ -14,6 +17,7 @@ export default async function SettingsPage() {
           Preferências operacionais compartilhadas pela clínica.
         </p>
       </header>
+      <ClinicProfileForm profile={profile} />
       <ScheduleForm {...schedule} />
     </div>
   );
