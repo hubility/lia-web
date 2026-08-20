@@ -1,6 +1,7 @@
 import { Breadcrumb } from '@/components/layout/breadcrumb';
 import { UserMenu } from '@/components/layout/user-menu';
 import { NotificationTrigger } from '@/components/layout/notification-trigger';
+import { LiaToggle } from '@/components/layout/lia-toggle';
 
 interface TopbarProps {
   user: {
@@ -18,6 +19,7 @@ export function Topbar({ user }: TopbarProps) {
     >
       <Breadcrumb />
       <div className="flex items-center gap-3">
+        <LiaToggle />
         <NotificationTrigger />
         <UserMenu user={user} />
       </div>
