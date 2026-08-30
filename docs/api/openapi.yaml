@@ -429,6 +429,27 @@ paths:
         "401": { $ref: "#/components/responses/Unauthorized" }
         "422": { $ref: "#/components/responses/Unprocessable" }
 
+  /api/agent/v1/prescriptions/{id}/pdf:
+    get:
+      tags: [Receitas]
+      summary: PDF de una receita
+      description: >
+        Genera al vuelo el PDF de la receita (mismo render que la plataforma) y
+        lo devuelve como binario. El agente lo usa para enviárselo al doctor
+        por WhatsApp tras crearla.
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: string }
+      responses:
+        "200":
+          description: PDF de la receita.
+          content:
+            application/pdf:
+              schema: { type: string, format: binary }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+
   /api/agent/v1/certificates:
     get:
       tags: [Atestados]
