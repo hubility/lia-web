@@ -371,6 +371,27 @@ paths:
         "401": { $ref: "#/components/responses/Unauthorized" }
         "422": { $ref: "#/components/responses/Unprocessable" }
 
+  /api/agent/v1/quotes/{id}/pdf:
+    get:
+      tags: [Orçamentos]
+      summary: PDF de un orçamento
+      description: >
+        Genera al vuelo el PDF del orçamento (mismo render que la plataforma) y
+        lo devuelve como binario. El agente lo usa para enviárselo al doctor
+        por WhatsApp tras crearlo.
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: string }
+      responses:
+        "200":
+          description: PDF del orçamento.
+          content:
+            application/pdf:
+              schema: { type: string, format: binary }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+
   /api/agent/v1/prescriptions:
     get:
       tags: [Receitas]
@@ -501,6 +522,27 @@ paths:
                   data: { $ref: "#/components/schemas/MedicalCertificate" }
         "401": { $ref: "#/components/responses/Unauthorized" }
         "422": { $ref: "#/components/responses/Unprocessable" }
+
+  /api/agent/v1/certificates/{id}/pdf:
+    get:
+      tags: [Atestados]
+      summary: PDF de un atestado
+      description: >
+        Genera al vuelo el PDF del atestado (mismo render que la plataforma) y
+        lo devuelve como binario. El agente lo usa para enviárselo al doctor
+        por WhatsApp tras crearlo.
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: string }
+      responses:
+        "200":
+          description: PDF del atestado.
+          content:
+            application/pdf:
+              schema: { type: string, format: binary }
+        "401": { $ref: "#/components/responses/Unauthorized" }
 
 components:
   securitySchemes:
